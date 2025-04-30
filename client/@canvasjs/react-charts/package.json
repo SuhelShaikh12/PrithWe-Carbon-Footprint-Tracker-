@@ -25,7 +25,10 @@
 	"license": "MIT",
 	"homepage": "https://canvasjs.com/react-charts/",
 	"peerDependencies": {
-		"react": ">=16.0.0",
-		"@canvasjs/charts": "^3.7.5"
+		"@canvasjs/charts": "^3.7.5",
+		"react": ">=16.0.0"
+	},
+	"dependencies": {
+		"@canvasjs/react-charts": "file:"
 	}
 }

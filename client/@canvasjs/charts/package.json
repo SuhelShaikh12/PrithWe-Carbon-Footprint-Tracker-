@@ -25,5 +25,8 @@
 	],
 	"author": "fenopix",
 	"license": "SEE LICENSE IN <LICENSE>",
-	"homepage": "https://canvasjs.com/"
+	"homepage": "https://canvasjs.com/",
+	"dependencies": {
+		"@canvasjs/charts": "file:"
+	}
 }

@@ -85,7 +85,7 @@ function App() {
             path="/history"
             element={loggedIn ? <History /> : <Navigate to="/login" />}
           />
-          <Route path='/verifyEmail' element={ <VerifyEmail/>} />
+          <Route path="/verifyEmail" element={<VerifyEmail />} />
           <Route path='/resetPassword' element={ <ResetPassword/>} />
           <Route path='*' element={ <Error/>} />
         </Routes>

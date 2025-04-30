@@ -26,15 +26,21 @@ const AboutUs = () => {
                 <div className="flex items-center mb-6">
                     {/*<img src={adarsh} className="w-24 h-22 rounded-full" alt="Adarsh Singh" />*/}
                     <div className="ml-4">
-                        <h3 className="text-xl font-semibold">Adarsh Singh</h3>
+                        <h3 className="text-xl font-semibold">Abhishek Yadav</h3>
                         <p className="text-gray-700">Founder</p>
                     </div>
                 </div>
                 <div className="flex items-center">
                     {/*<img src={shivam} className="w-24 h-22 rounded-full" alt="Shivam Verma" />*/}
                     <div className="ml-4">
-                        <h3 className="text-xl font-semibold">Shivam Verma</h3>
-                        <p className="text-gray-700">Co-founder</p>
+                        <h3 className="text-xl font-semibold"><ol>
+                            <li>Harshita Dubey</li>
+                            <li>Shubham Sharma</li>
+                            <li> Mohd Suhel Imshad</li>
+                            <li>Naman Verma</li>
+                        </ol>
+                         </h3>
+                        <p className="text-gray-700">Co-founders</p>
                     </div>
                 </div>
             </section>

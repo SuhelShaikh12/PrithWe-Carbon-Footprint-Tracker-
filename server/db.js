@@ -1,71 +1,71 @@
-import pg from 'pg';
-import env from 'dotenv';
+// import pg from 'pg';
+// import env from 'dotenv';
 
-env.config();
+// env.config();
 
-// Log the certificate and other connection details
-// console.log("Certificate:", process.env.PG_CERTIFICATE);
-// console.log("Database Connection Details:");
-// console.log("Host:", process.env.PG_HOST);
-// console.log("User:", process.env.PG_USER);
-// console.log("Database:", process.env.PG_DATABASE);
-// console.log("Port:", process.env.PG_PORT);
+// // Log the certificate and other connection details
+// // console.log("Certificate:", process.env.PG_CERTIFICATE);
+// // console.log("Database Connection Details:");
+// // console.log("Host:", process.env.PG_HOST);
+// // console.log("User:", process.env.PG_USER);
+// // console.log("Database:", process.env.PG_DATABASE);
+// // console.log("Port:", process.env.PG_PORT);
 
-const db = new pg.Client({
-  user: process.env.PG_USER,
-  host: process.env.PG_HOST,
-  database: process.env.PG_DATABASE,
-  password: process.env.PG_PASSWORD,
-  port: process.env.PG_PORT,
-  ssl: {
-    require: true,
-    rejectUnauthorized: true,
-    ca: process.env.PG_CERTIFICATE,
-  },
-});
+// const db = new pg.Client({
+//   user: process.env.PG_USER,
+//   host: process.env.PG_HOST,
+//   database: process.env.PG_DATABASE,
+//   password: process.env.PG_PASSWORD,
+//   port: process.env.PG_PORT,
+//   ssl: {
+//     require: true,
+//     rejectUnauthorized: true,
+//     ca: process.env.PG_CERTIFICATE,
+//   },
+// });
 
-// Log SSL configuration
-console.log("SSL Configuration:", {
-  require: db.ssl ? db.ssl.require : "Not Set",
-  rejectUnauthorized: db.ssl ? db.ssl.rejectUnauthorized : "Not Set",
-  ca: db.ssl && db.ssl.ca ? "Loaded" : "Not Loaded",
-});
+// // Log SSL configuration
+// console.log("SSL Configuration:", {
+//   require: db.ssl ? db.ssl.require : "Not Set",
+//   rejectUnauthorized: db.ssl ? db.ssl.rejectUnauthorized : "Not Set",
+//   ca: db.ssl && db.ssl.ca ? "Loaded" : "Not Loaded",
+// });
 
 
 
-// Connect to the database
-(async () => {
-  try {
-    console.log("Attempting to connect to the database...");
-    await db.connect();
-    console.log("Connected to the database successfully!");
-  } catch (error) {
-    console.error("Database connection error:", error);
-    console.error("Error details:", {
-      message: error.message,
-      code: error.code,
-      severity: error.severity,
-      file: error.file,
-      line: error.line,
-      routine: error.routine,
-    });
-    console.error("SSL Configuration:", {
-      rejectUnauthorized: db.options.ssl.rejectUnauthorized,
-      ca: db.options.ssl.ca ? "Loaded" : "Not Loaded",
-    });
-  }
-})();
-// Function to perform a query
-const query = async (text, params) => {
-  try {
-    const result = await db.query(text, params);
-    return result;
-  } catch (error) {
-    console.error('Error executing query:', error);
-  }
-};
+// // Connect to the database
+// (async () => {
+//   try {
+//     console.log("Attempting to connect to the database...");
+//     await db.connect();
+//     console.log("Connected to the database successfully!");
+//   } catch (error) {
+//     console.error("Database connection error:", error);
+//     console.error("Error details:", {
+//       message: error.message,
+//       code: error.code,
+//       severity: error.severity,
+//       file: error.file,
+//       line: error.line,
+//       routine: error.routine,
+//     });
+//     console.error("SSL Configuration:", {
+//       rejectUnauthorized: db.options.ssl.rejectUnauthorized,
+//       ca: db.options.ssl.ca ? "Loaded" : "Not Loaded",
+//     });
+//   }
+// })();
+// // Function to perform a query
+// const query = async (text, params) => {
+//   try {
+//     const result = await db.query(text, params);
+//     return result;
+//   } catch (error) {
+//     console.error('Error executing query:', error);
+//   }
+// };
 
-export { query };
+// export { query };
 
 {/*import pg from 'pg';
 import env from "dotenv";
@@ -149,3 +149,49 @@ const query = async (text, params) => {
 
 export { query };
 */}
+
+
+// server/db.js
+// import pkg from 'pg';
+// const { Pool } = pkg;
+
+// const isProduction = process.env.NODE_ENV === 'production';
+
+// const pool = new Pool({
+//   user: process.env.PG_USER,
+//   host: process.env.PG_HOST,
+//   database: process.env.PG_DATABASE,
+//   password: process.env.PG_PASSWORD,
+//   port: process.env.PG_PORT,
+//   ssl: isProduction ? { rejectUnauthorized: true } : false,
+// });
+
+// pool.connect()
+//   .then(() => console.log('✅ Connected to the database'))
+//   .catch(err => console.error('❌ Database connection error:', err));
+
+// export default pool;
+
+import dotenv from 'dotenv';
+dotenv.config(); 
+
+import pkg from 'pg';
+const { Pool } = pkg;
+
+const isProduction = process.env.NODE_ENV === 'production';
+
+const pool = new Pool({
+  user: process.env.PG_USER,
+  host: process.env.PG_HOST,
+  database: process.env.PG_DATABASE,
+  password: process.env.PG_PASSWORD,
+  port: process.env.PG_PORT,
+  ssl: isProduction ? { rejectUnauthorized: true } : false,
+});
+
+pool.connect()
+  .then(() => console.log('✅ Connected to the database'))
+  .catch(err => console.error('❌ Database connection error:', err));
+
+export const query = (text, params) => pool.query(text, params);
+export default pool;
