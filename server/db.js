@@ -182,12 +182,15 @@ const isProduction = process.env.NODE_ENV === 'production';
 
 const pool = new Pool({
   connectionString: process.env.DB_URI,
+  ssl: {
+    rejectUnauthorized: false, // Accept self-signed certificates (Render uses this)
+  },
   user: process.env.PG_USER,
   host: process.env.PG_HOST,
   database: process.env.PG_DATABASE,
   password: process.env.PG_PASSWORD,
   port: process.env.PG_PORT,
-  ssl: isProduction ? { rejectUnauthorized: true } : false,
+ ssl: isProduction ? { rejectUnauthorized: true } : false,
 });
 
 pool.connect()
