@@ -151,8 +151,8 @@ import nodemailer from 'nodemailer';
 import dotenv from 'dotenv';
 dotenv.config();
 
-console.log("MAIL:", process.env.MAIL);
-console.log("APP_PASSWORD:", process.env.APP_PASSWORD ? "✅ Loaded" : "❌ Missing");
+console.log("EMAIL_USER:", process.env.EMAIL_USER);
+console.log("EMAIL_PASS:", process.env.EMAIL_PASS ? "✅ Loaded" : "❌ Missing");
 
 
 const router = express.Router();
