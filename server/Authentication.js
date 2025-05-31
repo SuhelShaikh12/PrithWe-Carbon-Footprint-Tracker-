@@ -137,16 +137,23 @@
 
 
 
-import dotenv from 'dotenv';
-dotenv.config(); // This must be before using process.env
+ // This must be before using process.env
 
 import express from "express";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { body, validationResult } from "express-validator";
-import nodemailer from "nodemailer";
+
 import { query } from "./db.js";
 // your database query function
+
+import nodemailer from 'nodemailer';
+import dotenv from 'dotenv';
+dotenv.config();
+
+console.log("MAIL:", process.env.MAIL);
+console.log("APP_PASSWORD:", process.env.APP_PASSWORD ? "✅ Loaded" : "❌ Missing");
+
 
 const router = express.Router();
 
