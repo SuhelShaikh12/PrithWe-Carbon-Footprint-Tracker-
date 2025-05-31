@@ -486,7 +486,7 @@ import express from 'express';
 import bcrypt from 'bcryptjs';
 import passport from './passport.js'; // adjust path as needed
 import { body, validationResult } from 'express-validator';
-import { query } from '../db.js'; // Use shared query function
+import { query } from './db.js'; // Use shared query function
 
 const router = express.Router();
 
