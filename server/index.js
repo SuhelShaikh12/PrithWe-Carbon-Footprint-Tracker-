@@ -15,7 +15,7 @@
 
 // import householdRouter from './householdData.js';
 // import contactUsRouter from './contactUs.js';
-// import authRouter from './Authentication.js';  // Import Authentication.js
+// import authRouter from './Authentication.js';
 // import businessRouter from './businessData.js';
 // import adminRouter from './adminData.js';
 
@@ -52,29 +52,53 @@
 // app.use(express.json());
 // app.use(express.urlencoded({ extended: true }));
 
-// // Session Configuration
 // app.use(session({
 //   secret: process.env.SESSION_SECRET || 'default_secret',
 //   resave: false,
 //   saveUninitialized: false,
 //   store: new MemoryStore({ checkPeriod: 86400000 }),
 //   cookie: {
-//     secure: isProduction,  // Secure cookies in production (HTTPS)
+//     secure: isProduction,
 //     httpOnly: true,
-//     sameSite: isProduction ? 'none' : 'lax',  // Handle cookies in production
-//     maxAge: 86400000  // 1 day
-//   }
+//     sameSite: isProduction ? 'none' : 'lax',
+//     maxAge: 86400000,
+//   },
 // }));
 
 // app.use(passport.initialize());
 // app.use(passport.session());
 
-// // API Routes
+// // ===== Routes =====
 // app.use('/api/household', householdRouter);
 // app.use('/api/contact', contactUsRouter);
-// app.use('/api/auth', authRouter);  // Use Authentication.js router
+// app.use('/api/auth', authRouter);
 // app.use('/api/business', businessRouter);
 // app.use('/api/admin', adminRouter);
+
+// // ===== Add Login Status & User Type Routes =====
+// app.get('/api/auth/login/status', (req, res) => {
+//   console.log('➡️ Checking login status...');
+//   if (req.user) {
+//     console.log('✅ User logged in:', req.user);
+//     req.session.userId = req.user.id;
+//     return res.status(200).json(req.user);
+//   } else {
+//     console.log('❌ No user session');
+//     return res.sendStatus(401);
+//   }
+// });
+
+// app.get('/api/auth/user-type', (req, res) => {
+//   console.log('➡️ Checking user type...');
+//   if (req.user) {
+//     req.session.userType = req.user.type;
+//     console.log('✅ User type:', req.user.type);
+//     return res.status(200).json({ type: req.user.type });
+//   } else {
+//     console.log('❌ No user session');
+//     return res.sendStatus(401);
+//   }
+// });
 
 // // ===== Serve React Frontend in Production =====
 // if (isProduction) {
@@ -99,30 +123,36 @@
 // });
 
 
-import express from 'express';
-import path from 'path';
-import dotenv from 'dotenv';
-import cors from 'cors';
-import cookieParser from 'cookie-parser';
-import session from 'express-session';
-import passport from 'passport';
-import memorystore from 'memorystore';
-import pg from 'pg';
-import bcrypt from 'bcrypt';
-import axios from 'axios';
-import { fileURLToPath } from 'url';
 
-import householdRouter from './householdData.js';
-import contactUsRouter from './contactUs.js';
-import authRouter from './Authentication.js';
-import businessRouter from './businessData.js';
-import adminRouter from './adminData.js';
+
+import express from "express";
+import path from "path";
+import dotenv from "dotenv";
+import cors from "cors";
+import cookieParser from "cookie-parser";
+import session from "express-session";
+import passport from "passport";
+import memorystore from "memorystore";
+import pg from "pg";
+import axios from "axios";
+import { fileURLToPath } from "url";
+
+// Import routers
+import householdRouter from "./householdData.js";
+import contactUsRouter from "./contactUs.js";
+import authRouter from "./Authentication.js";
+import businessRouter from "./businessData.js";
+import adminRouter from "./adminData.js";
+
+// Import passport config (must be after passport import and before use)
+import "./passport.js";
 
 dotenv.config();
+
 const app = express();
 const MemoryStore = memorystore(session);
 const port = process.env.PORT || 3001;
-const isProduction = process.env.NODE_ENV === 'production';
+const isProduction = process.env.NODE_ENV === "production";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
@@ -134,86 +164,95 @@ const db = new pg.Client({
   password: process.env.PG_PASSWORD,
   port: process.env.PG_PORT,
   ...(isProduction && {
-    ssl: { require: true, rejectUnauthorized: false },
+    ssl: { rejectUnauthorized: false },
   }),
 });
 
-db.connect()
-  .then(() => console.log('✅ Connected to PostgreSQL database'))
-  .catch((err) => console.error('❌ Database connection error:', err));
+db
+  .connect()
+  .then(() => console.log("✅ Connected to PostgreSQL database"))
+  .catch((err) => console.error("❌ Database connection error:", err));
 
 // ===== Middleware =====
-app.use(cors({
-  origin: isProduction ? 'https://prithwe-carbon-footprint-tracker.onrender.com' : 'http://localhost:5173',
-  credentials: true,
-}));
+app.use(
+  cors({
+    origin: isProduction
+      ? "https://prithwe-carbon-footprint-tracker.onrender.com"
+      : "http://localhost:5173", // or your frontend port during dev
+    credentials: true,
+  })
+);
 app.use(cookieParser());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-app.use(session({
-  secret: process.env.SESSION_SECRET || 'default_secret',
-  resave: false,
-  saveUninitialized: false,
-  store: new MemoryStore({ checkPeriod: 86400000 }),
-  cookie: {
-    secure: isProduction,
-    httpOnly: true,
-    sameSite: isProduction ? 'none' : 'lax',
-    maxAge: 86400000,
-  },
-}));
+app.use(
+  session({
+    secret: process.env.SESSION_SECRET || "default_secret",
+    resave: false,
+    saveUninitialized: false,
+    store: new MemoryStore({
+      checkPeriod: 86400000, // prune expired entries every 24h
+    }),
+    cookie: {
+      secure: isProduction,
+      httpOnly: true,
+      sameSite: isProduction ? "none" : "lax",
+      maxAge: 86400000,
+    },
+  })
+);
 
 app.use(passport.initialize());
 app.use(passport.session());
 
 // ===== Routes =====
-app.use('/api/household', householdRouter);
-app.use('/api/contact', contactUsRouter);
-app.use('/api/auth', authRouter);
-app.use('/api/business', businessRouter);
-app.use('/api/admin', adminRouter);
+app.use("/api/household", householdRouter);
+app.use("/api/contact", contactUsRouter);
+app.use("/api/auth", authRouter);
+app.use("/api/business", businessRouter);
+app.use("/api/admin", adminRouter);
 
-// ===== Add Login Status & User Type Routes =====
-app.get('/api/auth/login/status', (req, res) => {
-  console.log('➡️ Checking login status...');
+// ===== Extra auth status and user type routes =====
+app.get("/api/auth/login/status", (req, res) => {
   if (req.user) {
-    console.log('✅ User logged in:', req.user);
     req.session.userId = req.user.id;
     return res.status(200).json(req.user);
   } else {
-    console.log('❌ No user session');
     return res.sendStatus(401);
   }
 });
 
-app.get('/api/auth/user-type', (req, res) => {
-  console.log('➡️ Checking user type...');
+app.get("/api/auth/user-type", (req, res) => {
   if (req.user) {
     req.session.userType = req.user.type;
-    console.log('✅ User type:', req.user.type);
     return res.status(200).json({ type: req.user.type });
   } else {
-    console.log('❌ No user session');
     return res.sendStatus(401);
   }
 });
 
-// ===== Serve React Frontend in Production =====
+// ===== Serve React frontend in production =====
 if (isProduction) {
-  const clientDist = path.join(__dirname, '../client/dist');
+  const clientDist = path.join(__dirname, "../client/dist");
   app.use(express.static(clientDist));
-  app.get('*', (_, res) => res.sendFile(path.join(clientDist, 'index.html')));
+  app.get("*", (_, res) => res.sendFile(path.join(clientDist, "index.html")));
 } else {
-  app.get('/', (_, res) => res.send('App is under development.'));
+  app.get("/", (_, res) => res.send("App is under development."));
 }
 
-// ===== Keep Render Alive =====
-const pingURL = 'https://prithwe-carbon-footprint-tracker.onrender.com/';
+// ===== Keep Render alive (ping) =====
+const pingURL = isProduction
+  ? "https://prithwe-carbon-footprint-tracker.onrender.com/"
+  : "http://localhost:3001/";
+
 setInterval(() => {
-  axios.get(pingURL)
-    .then(res => console.log(`🌐 Pinged at ${new Date().toISOString()} — Status: ${res.status}`))
-    .catch(err => console.error('⚠️ Ping error:', err.message));
+  axios
+    .get(pingURL)
+    .then((res) =>
+      console.log(`🌐 Pinged at ${new Date().toISOString()} — Status: ${res.status}`)
+    )
+    .catch((err) => console.error("⚠️ Ping error:", err.message));
 }, 800000);
 
 // ===== Start Server =====

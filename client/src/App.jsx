@@ -200,7 +200,7 @@ import Register from './pages/Register';
 import Calculator from './pages/Calculator';
 import AboutUs from './pages/AboutUs';
 import Information from './pages/Information';
-import VerifyEmail from './pages/VerifyEmail';
+//import VerifyEmail from './pages/VerifyEmail';
 import ResetPassword from './pages/ResetPassword';
 import History from "./pages/History";
 import AdminDashBoard from './pages/AdminDashboard';
@@ -268,7 +268,7 @@ function App() {
             element={loggedIn ? <History /> : <Navigate to="/login" replace />}
           />
 
-          <Route path="/verifyEmail" element={<VerifyEmail />} />
+          {/* //<Route path="/verifyEmail" element={<VerifyEmail />} /> */}
           <Route path="/resetPassword" element={<ResetPassword />} />
           <Route path="*" element={<Error />} />
         </Routes>
