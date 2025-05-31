@@ -81,7 +81,94 @@
 // });
 
 
-// backend/utils/mailer.js
+// // backend/utils/mailer.js
+// import nodemailer from "nodemailer";
+// import dotenv from "dotenv";
+// import fs from "fs";
+// import path from "path";
+// import { fileURLToPath } from "url";
+// import { dirname } from "path";
+// import { query } from "../db.js";
+
+// dotenv.config();
+
+// const __dirname = dirname(fileURLToPath(import.meta.url));
+
+// // Wrap async middleware function
+// const wrapAsync = (fn) => {
+//   return (req, res, next) => {
+//     Promise.resolve(fn(req, res, next)).catch(next);
+//   };
+// };
+
+// // Create Nodemailer transporter
+// const transporter = nodemailer.createTransport({
+//   host: "smtp.gmail.com",
+//   port: 587,
+//   secure: false,
+//   requireTLS: true,
+//   auth: {
+//     user: process.env.MAIL,
+//     pass: process.env.APP_PASSWORD,
+//   },
+// });
+
+// // Generate 6-digit OTP
+// export function generateSixDigitOTP() {
+//   let otp = "";
+//   for (let i = 0; i < 6; i++) {
+//     otp += Math.floor(Math.random() * 10);
+//   }
+//   return otp;
+// }
+
+// // Read OTP template and inject code
+// const getHtmlTemplate = (otp) => {
+//   const templatePath = path.resolve(__dirname, "EmailTemplates", "SendOtp.html");
+//   const template = fs.readFileSync(templatePath, "utf8");
+//   return template.replace("{{otp}}", otp);
+// };
+
+// // Send OTP and update DB
+// export const sendOTP = wrapAsync(async (email, otp, subject) => {
+//   try {
+//     const normalizedEmail = email.trim().toLowerCase();
+//     console.log("📧 Normalized Email:", normalizedEmail);
+
+//     const result = await query("SELECT * FROM users WHERE LOWER(email) = $1", [normalizedEmail]);
+//     console.log("🔎 DB Lookup Result:", result.rows);
+
+//     if (result.rows.length === 0) {
+//       throw new Error("Error sending OTP. Make sure you have registered this mail.");
+//     }
+
+//     const htmlContent = getHtmlTemplate(otp);
+
+//     const mailOptions = {
+//       from: process.env.MAIL,
+//       to: normalizedEmail,
+//       subject,
+//       text: `Your OTP for prithwe is: ${otp}`,
+//       html: htmlContent,
+//     };
+
+//     await transporter.sendMail(mailOptions);
+
+//     const timestamp = Date.now();
+
+//     return await query(
+//       "UPDATE users SET otp = $1, otp_timestamp = $2 WHERE LOWER(email) = $3",
+//       [otp, timestamp, normalizedEmail]
+//     );
+//   } catch (error) {
+//     console.error("❌ Error sending OTP:", error.message);
+//     throw error;
+//   }
+// });
+
+
+
+
 import nodemailer from "nodemailer";
 import dotenv from "dotenv";
 import fs from "fs";
@@ -94,14 +181,12 @@ dotenv.config();
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
-// Wrap async middleware function
 const wrapAsync = (fn) => {
   return (req, res, next) => {
     Promise.resolve(fn(req, res, next)).catch(next);
   };
 };
 
-// Create Nodemailer transporter
 const transporter = nodemailer.createTransport({
   host: "smtp.gmail.com",
   port: 587,
@@ -115,31 +200,29 @@ const transporter = nodemailer.createTransport({
 
 // Generate 6-digit OTP
 export function generateSixDigitOTP() {
-  let otp = "";
-  for (let i = 0; i < 6; i++) {
-    otp += Math.floor(Math.random() * 10);
-  }
-  return otp;
+  return Math.floor(100000 + Math.random() * 900000).toString();
 }
 
-// Read OTP template and inject code
 const getHtmlTemplate = (otp) => {
   const templatePath = path.resolve(__dirname, "EmailTemplates", "SendOtp.html");
   const template = fs.readFileSync(templatePath, "utf8");
   return template.replace("{{otp}}", otp);
 };
 
-// Send OTP and update DB
 export const sendOTP = wrapAsync(async (email, otp, subject) => {
   try {
     const normalizedEmail = email.trim().toLowerCase();
     console.log("📧 Normalized Email:", normalizedEmail);
 
-    const result = await query("SELECT * FROM users WHERE LOWER(email) = $1", [normalizedEmail]);
+    const result = await query(
+      "SELECT * FROM users WHERE LOWER(email) = $1 AND verified = false",
+      [normalizedEmail]
+    );
+
     console.log("🔎 DB Lookup Result:", result.rows);
 
     if (result.rows.length === 0) {
-      throw new Error("Error sending OTP. Make sure you have registered this mail.");
+      throw new Error("User not found or already verified. Cannot send OTP.");
     }
 
     const htmlContent = getHtmlTemplate(otp);
@@ -148,18 +231,21 @@ export const sendOTP = wrapAsync(async (email, otp, subject) => {
       from: process.env.MAIL,
       to: normalizedEmail,
       subject,
-      text: `Your OTP for prithwe is: ${otp}`,
+      text: `Your OTP for Prithwe is: ${otp}`,
       html: htmlContent,
     };
 
     await transporter.sendMail(mailOptions);
+    console.log("✅ OTP email sent to", normalizedEmail);
 
     const timestamp = Date.now();
 
-    return await query(
+    await query(
       "UPDATE users SET otp = $1, otp_timestamp = $2 WHERE LOWER(email) = $3",
       [otp, timestamp, normalizedEmail]
     );
+
+    console.log("✅ OTP saved to DB for", normalizedEmail);
   } catch (error) {
     console.error("❌ Error sending OTP:", error.message);
     throw error;

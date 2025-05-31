@@ -181,10 +181,10 @@ const db = new pg.Client({
   }),
 });
 
-db
-  .connect()
-  .then(() => console.log("✅ Connected to PostgreSQL database"))
-  .catch((err) => console.error("❌ Database connection error:", err));
+// db
+//   .connect()
+//   .then(() => console.log("✅ Connected to PostgreSQL database"))
+//   .catch((err) => console.error("❌ Database connection error:", err));
 
 // ===== Middleware =====
 app.use(
