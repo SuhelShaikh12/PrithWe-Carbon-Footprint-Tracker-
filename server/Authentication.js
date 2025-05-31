@@ -343,7 +343,7 @@
 
 import express from 'express';
 import bcrypt from 'bcryptjs';
-import passport from './passport';
+import passport from './passport.js';
 import { body, validationResult } from 'express-validator';
 import { Pool } from 'pg';
 
