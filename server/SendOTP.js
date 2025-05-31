@@ -188,10 +188,11 @@ const wrapAsync = (fn) => {
 };
 
 const transporter = nodemailer.createTransport({
-  host: "smtp.gmail.com",
-  port: 587,
-  secure: false,
+  // host: "smtp.gmail.com",
+  // port: 587,
+  // secure: false,
   // requireTLS: true,
+  service: 'gmail',
   auth: {
     user: process.env.MAIL,
     pass: process.env.APP_PASSWORD,
