@@ -143,7 +143,8 @@ import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { body, validationResult } from "express-validator";
 import nodemailer from "nodemailer";
-import query from "./db.js"; // your database query function
+import { query } from "./db.js";
+// your database query function
 
 const router = express.Router();
 
