@@ -137,6 +137,8 @@
 
 
 
+import dotenv from 'dotenv';
+dotenv.config(); // This must be before using process.env
 
 import express from "express";
 import bcrypt from "bcryptjs";
