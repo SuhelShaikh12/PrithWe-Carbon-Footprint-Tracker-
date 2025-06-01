@@ -170,7 +170,7 @@ const VerifyEmail = () => {
             type="text"
             maxLength={6}
             value={otp}
-            onChange={(e) => setOtp(e.target.value.replace(/\D/, ""))}
+            onChange={(e) => setOtp(e.target.value.replace(/\D/g, ""))}
             placeholder="Enter 6-digit OTP"
             required
             className="rounded-lg px-3 p-2"
@@ -189,7 +189,6 @@ const VerifyEmail = () => {
 };
 
 export default VerifyEmail;
-
 
 
 
