@@ -1,3 +1,7 @@
+
+
+
+
 // import { useState } from "react";
 // import { Link, useNavigate } from "react-router-dom";
 // import axios from "axios";
@@ -14,7 +18,7 @@
 //     email: "",
 //     password: "",
 //     confirmPassword: "",
-//     type: "", // Household or Business
+//     type: "",
 //   });
 
 //   const [loading, setLoading] = useState(false);
@@ -40,7 +44,7 @@
 //       return false;
 //     }
 //     if (password.length < 6 || !password.match(/[!@#$%^&*(),.?":{}|<>]/)) {
-//       toast.error("Password must be at least 6 characters long and contain a special symbol");
+//       toast.error("Password must be at least 6 characters and include a special character");
 //       return false;
 //     }
 //     if (password !== confirmPassword) {
@@ -48,7 +52,7 @@
 //       return false;
 //     }
 //     if (!type) {
-//       toast.error("Please select whether you are a Household or Business");
+//       toast.error("Please select Household or Business");
 //       return false;
 //     }
 //     return true;
@@ -60,21 +64,31 @@
 
 //     setLoading(true);
 //     try {
-//       const response = await axios.post("/api/auth/register", {
+//       // Step 1: Register the user
+//       const registerRes = await axios.post("/api/auth/register", {
 //         name,
 //         email,
 //         password,
 //         type,
 //       });
 
-//       if (response.data.userId) {
-//         localStorage.setItem("userId", response.data.userId);
-//         toast.success("Sign up successful! Please verify your email.");
-//         setTimeout(() => navigate("/verifyEmail", { state: { userId: response.data.userId } }), 2000);
-//       }
-//     } catch (error) {
-//       console.error("Error registering user:", error.response || error);
-//       toast.error(error.response?.data?.message || "Error registering user");
+//       const userId = registerRes.data.userId;
+//       if (!userId) throw new Error("Missing user ID from registration");
+
+//       // Step 2: Send OTP to user's email
+//       const otpRes = await axios.post("/api/auth/send-otp", {
+//         email,
+//       });
+
+//       toast.success("OTP sent to your email. Please verify.");
+//       // Step 3: Redirect to OTP verification page
+//       setTimeout(() => {
+//         navigate("/verifyEmail", { state: { userId } });
+//       }, 2000);
+//     } catch (err) {
+//       console.error("Error during registration/OTP:", err);
+//       const msg = err?.response?.data?.message || "Registration or OTP sending failed";
+//       toast.error(msg);
 //     } finally {
 //       setLoading(false);
 //     }
@@ -82,7 +96,7 @@
 
 //   const handleGoogleLogin = () => {
 //     if (!(type === "Household" || type === "Business")) {
-//       toast.warn("Please select Household or Business to sign up with Google");
+//       toast.warn("Please select Household or Business before using Google Signup");
 //       return;
 //     }
 //     window.location.href = `https://prithwe.onrender.com/auth/google?userType=${type}`;
@@ -230,7 +244,7 @@
 
 
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
@@ -270,8 +284,13 @@ function RegisterForm() {
       toast.error("Invalid email address");
       return false;
     }
-    if (password.length < 6 || !password.match(/[!@#$%^&*(),.?":{}|<>]/)) {
-      toast.error("Password must be at least 6 characters and include a special character");
+    if (
+      password.length < 6 ||
+      !password.match(/[!@#$%^&*(),.?":{}|<>]/)
+    ) {
+      toast.error(
+        "Password must be at least 6 characters and include a special character"
+      );
       return false;
     }
     if (password !== confirmPassword) {
@@ -291,7 +310,7 @@ function RegisterForm() {
 
     setLoading(true);
     try {
-      // Step 1: Register the user
+      // Register the user and get userId
       const registerRes = await axios.post("/api/auth/register", {
         name,
         email,
@@ -302,19 +321,19 @@ function RegisterForm() {
       const userId = registerRes.data.userId;
       if (!userId) throw new Error("Missing user ID from registration");
 
-      // Step 2: Send OTP to user's email
-      const otpRes = await axios.post("/api/auth/send-otp", {
-        email,
-      });
+      // Send OTP immediately after registration
+      await axios.post("/api/auth/send-otp", { email });
 
       toast.success("OTP sent to your email. Please verify.");
-      // Step 3: Redirect to OTP verification page
+
+      // Redirect to OTP verification page with userId in state
       setTimeout(() => {
-        navigate("/verifyEmail", { state: { userId } });
-      }, 2000);
+        navigate("/verify-otp", { state: { userId } });
+      }, 1500);
     } catch (err) {
-      console.error("Error during registration/OTP:", err);
-      const msg = err?.response?.data?.message || "Registration or OTP sending failed";
+      console.error(err);
+      const msg =
+        err?.response?.data?.message || "Registration or OTP sending failed";
       toast.error(msg);
     } finally {
       setLoading(false);
@@ -334,7 +353,10 @@ function RegisterForm() {
       <ToastContainer autoClose={4000} position="top-center" newestOnTop />
       <h2 className="text-center font-medium text-xl md:text-2xl py-4">Signup Form</h2>
 
-      <form onSubmit={handleSubmit} className="flex flex-col space-y-4 max-w-md mx-auto bg-gray-200 p-6 rounded-lg">
+      <form
+        onSubmit={handleSubmit}
+        className="flex flex-col space-y-4 max-w-md mx-auto bg-gray-200 p-6 rounded-lg"
+      >
         <input
           type="text"
           name="name"
@@ -454,13 +476,6 @@ function RegisterForm() {
           <img src={Logo} alt="Google logo" className="w-6 h-6 mr-2" />
           Signup with Google
         </button>
-
-        <div className="signIn text-center mt-4">
-          Already have an account?{" "}
-          <Link to="/login" className="text-blue-700 hover:underline">
-            Login here
-          </Link>
-        </div>
       </form>
     </div>
   );
