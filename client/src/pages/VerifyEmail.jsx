@@ -5,7 +5,6 @@
 // import { useNavigate, useLocation } from "react-router-dom";
 // import axios from "axios";
 // import { ToastContainer, toast } from "react-toastify";
-// import "react-toastify/dist/ReactToastify.css";
 
 // const VerifyEmail = () => {
 //   const navigate = useNavigate();
@@ -14,27 +13,45 @@
 
 //   const [otp, setOtp] = useState("");
 //   const [loading, setLoading] = useState(false);
-//   const [resendTimer, setResendTimer] = useState(60); // 60 seconds
+//   const [resendTimer, setResendTimer] = useState(60);
 
 //   useEffect(() => {
 //     if (!userId) {
 //       navigate("/register");
 //     } else {
 //       localStorage.setItem("userId", userId);
-//       toast.info("An OTP has been sent to your email.");
+//       startResendTimer();
 //     }
 //   }, [userId, navigate]);
 
-//   // Countdown timer
-//   useEffect(() => {
-//     if (resendTimer <= 0) return;
-//     const timer = setInterval(() => setResendTimer((prev) => prev - 1), 1000);
-//     return () => clearInterval(timer);
-//   }, [resendTimer]);
+//   const startResendTimer = () => {
+//     setResendTimer(60);
+//     const interval = setInterval(() => {
+//       setResendTimer((prev) => {
+//         if (prev === 1) {
+//           clearInterval(interval);
+//           return 0;
+//         }
+//         return prev - 1;
+//       });
+//     }, 1000);
+//   };
+
+//   const handleResendOtp = async () => {
+//     try {
+//       setLoading(true);
+//       const res = await axios.post("/api/auth/send-otp", { userId }); // Note: Only userId
+//       toast.success(res.data.message || "OTP resent!");
+//       startResendTimer();
+//     } catch (err) {
+//       toast.error(err.response?.data?.message || "Failed to resend OTP");
+//     } finally {
+//       setLoading(false);
+//     }
+//   };
 
 //   const handleVerify = async (e) => {
 //     e.preventDefault();
-
 //     if (otp.length !== 6) {
 //       toast.error("OTP must be 6 digits");
 //       return;
@@ -43,7 +60,7 @@
 //     setLoading(true);
 //     try {
 //       const res = await axios.post("/api/auth/verify-otp", { userId, otp });
-//       toast.success(res.data.message || "Email verified successfully!");
+//       toast.success(res.data.message);
 //       localStorage.removeItem("userId");
 //       setTimeout(() => navigate("/login"), 2000);
 //     } catch (err) {
@@ -53,23 +70,10 @@
 //     }
 //   };
 
-//   const handleResendOtp = async () => {
-//     setLoading(true);
-//     try {
-//       const res = await axios.post("/api/auth/send-otp", { userId });
-//       toast.success(res.data.message || "OTP resent to your email");
-//       setResendTimer(60); // reset timer
-//     } catch (err) {
-//       toast.error(err.response?.data?.message || "Failed to resend OTP");
-//     } finally {
-//       setLoading(false);
-//     }
-//   };
-
 //   return (
 //     <div className="verify-email-container">
 //       <ToastContainer autoClose={4000} position="top-center" newestOnTop />
-//       <h2 className="text-center font-medium text-xl py-4">Verify Your Email</h2>
+//       <h2 className="text-center font-medium text-xl py-4">Enter OTP</h2>
 
 //       <div className="max-w-md mx-auto flex flex-col space-y-4 p-6 bg-gray-200 rounded-lg">
 //         <form onSubmit={handleVerify} className="flex flex-col space-y-4">
@@ -77,12 +81,11 @@
 //             type="text"
 //             maxLength={6}
 //             value={otp}
-//             onChange={(e) => setOtp(e.target.value.replace(/\D/g, ""))}
+//             onChange={(e) => setOtp(e.target.value.replace(/\D/, ""))}
 //             placeholder="Enter 6-digit OTP"
 //             required
 //             className="rounded-lg px-3 p-2"
 //           />
-
 //           <button
 //             type="submit"
 //             disabled={loading}
@@ -92,18 +95,13 @@
 //           </button>
 //         </form>
 
-//         {resendTimer > 0 ? (
-//           <p className="text-center text-gray-600">Resend OTP in {resendTimer}s</p>
-//         ) : (
-//           <button
-//             type="button"
-//             onClick={handleResendOtp}
-//             disabled={loading}
-//             className="text-blue-600 underline hover:text-blue-800 text-center"
-//           >
-//             Resend OTP
-//           </button>
-//         )}
+//         <button
+//           onClick={handleResendOtp}
+//           disabled={resendTimer > 0 || loading}
+//           className="btn p-2 rounded-full bg-blue-500 hover:bg-blue-600"
+//         >
+//           {resendTimer > 0 ? `Resend OTP in ${resendTimer}s` : "Resend OTP"}
+//         </button>
 //       </div>
 //     </div>
 //   );
@@ -121,49 +119,26 @@ import { ToastContainer, toast } from "react-toastify";
 const VerifyEmail = () => {
   const navigate = useNavigate();
   const location = useLocation();
+
+  // Grab userId from state or localStorage (persist if user refreshes page)
   const userId = location.state?.userId || localStorage.getItem("userId");
 
   const [otp, setOtp] = useState("");
   const [loading, setLoading] = useState(false);
-  const [resendTimer, setResendTimer] = useState(60);
 
   useEffect(() => {
     if (!userId) {
+      // If no userId, redirect to registration page
       navigate("/register");
     } else {
+      // Save userId for persistence in localStorage
       localStorage.setItem("userId", userId);
-      startResendTimer();
     }
   }, [userId, navigate]);
 
-  const startResendTimer = () => {
-    setResendTimer(60);
-    const interval = setInterval(() => {
-      setResendTimer((prev) => {
-        if (prev === 1) {
-          clearInterval(interval);
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
-  };
-
-  const handleResendOtp = async () => {
-    try {
-      setLoading(true);
-      const res = await axios.post("/api/auth/send-otp", { userId }); // Note: Only userId
-      toast.success(res.data.message || "OTP resent!");
-      startResendTimer();
-    } catch (err) {
-      toast.error(err.response?.data?.message || "Failed to resend OTP");
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const handleVerify = async (e) => {
     e.preventDefault();
+
     if (otp.length !== 6) {
       toast.error("OTP must be 6 digits");
       return;
@@ -176,7 +151,7 @@ const VerifyEmail = () => {
       localStorage.removeItem("userId");
       setTimeout(() => navigate("/login"), 2000);
     } catch (err) {
-      toast.error(err.response?.data?.message || "Failed to verify OTP");
+      toast.error(err.response?.data?.message || "OTP verification failed");
     } finally {
       setLoading(false);
     }
@@ -187,34 +162,28 @@ const VerifyEmail = () => {
       <ToastContainer autoClose={4000} position="top-center" newestOnTop />
       <h2 className="text-center font-medium text-xl py-4">Enter OTP</h2>
 
-      <div className="max-w-md mx-auto flex flex-col space-y-4 p-6 bg-gray-200 rounded-lg">
-        <form onSubmit={handleVerify} className="flex flex-col space-y-4">
-          <input
-            type="text"
-            maxLength={6}
-            value={otp}
-            onChange={(e) => setOtp(e.target.value.replace(/\D/, ""))}
-            placeholder="Enter 6-digit OTP"
-            required
-            className="rounded-lg px-3 p-2"
-          />
-          <button
-            type="submit"
-            disabled={loading}
-            className="btn p-2 rounded-full bg-green-500 hover:bg-green-600"
-          >
-            {loading ? "Verifying..." : "Verify OTP"}
-          </button>
-        </form>
-
+      <form
+        onSubmit={handleVerify}
+        className="max-w-md mx-auto flex flex-col space-y-4 p-6 bg-gray-200 rounded-lg"
+      >
+        {/* No email input here */}
+        <input
+          type="text"
+          maxLength={6}
+          value={otp}
+          onChange={(e) => setOtp(e.target.value.replace(/\D/g, ""))}
+          placeholder="Enter 6-digit OTP"
+          required
+          className="rounded-lg px-3 p-2"
+        />
         <button
-          onClick={handleResendOtp}
-          disabled={resendTimer > 0 || loading}
-          className="btn p-2 rounded-full bg-blue-500 hover:bg-blue-600"
+          type="submit"
+          disabled={loading}
+          className="btn p-2 rounded-full bg-green-500 hover:bg-green-600"
         >
-          {resendTimer > 0 ? `Resend OTP in ${resendTimer}s` : "Resend OTP"}
+          {loading ? "Verifying..." : "Verify OTP"}
         </button>
-      </div>
+      </form>
     </div>
   );
 };
