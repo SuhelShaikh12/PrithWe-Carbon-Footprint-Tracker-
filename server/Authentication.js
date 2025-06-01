@@ -22,6 +22,45 @@ const transporter = nodemailer.createTransport({
 });
 
 // Register route (no OTP sent here)
+// router.post(
+//   "/register",
+//   [
+//     body("email").isEmail(),
+//     body("password").isLength({ min: 6 }),
+//     body("name").notEmpty(),
+//     body("type").notEmpty(),
+//   ],
+//   async (req, res) => {
+//     const errors = validationResult(req);
+//     if (!errors.isEmpty())
+//       return res.status(400).json({ errors: errors.array() });
+
+//     const { name, email, password, type } = req.body;
+
+//     try {
+//       const exists = await query("SELECT * FROM users WHERE email = $1", [email]);
+//       if (exists.rows.length > 0)
+//         return res.status(400).json({ message: "User already exists" });
+
+//       const hashed = await bcrypt.hash(password, 10);
+
+//       const newUser = await query(
+//         "INSERT INTO users (name, email, password, type, verified) VALUES ($1, $2, $3, $4, $5) RETURNING *",
+//         [name, email, hashed, type, false]
+//       );
+
+//       res.status(201).json({
+//         message: "Registered successfully. Please verify your email.",
+//         userId: newUser.rows[0].id,
+//       });
+//     } catch (err) {
+//       console.error(err);
+//       res.status(500).json({ message: "Server error" });
+//     }
+//   }
+// );
+
+// Register route - Now sends OTP after successful registration
 router.post(
   "/register",
   [
@@ -49,9 +88,36 @@ router.post(
         [name, email, hashed, type, false]
       );
 
+      const user = newUser.rows[0];
+
+      // ✅ Send OTP after user creation
+      const otp = Math.floor(100000 + Math.random() * 900000).toString();
+      const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
+
+      await query(
+        "INSERT INTO email_verifications (user_id, otp, expires_at, verified) VALUES ($1, $2, $3, $4)",
+        [user.id, otp, expiresAt, false]
+      );
+
+      const mailOptions = {
+        from: process.env.EMAIL_USER,
+        to: email,
+        subject: "Verify your email - OTP code",
+        text: `Hello ${user.name},\n\nYour verification code is: ${otp}\nIt will expire in 10 minutes.\n\nThank you!`,
+      };
+
+      transporter.sendMail(mailOptions, (error, info) => {
+        if (error) {
+          console.error("Error sending OTP email:", error);
+        } else {
+          console.log("OTP email sent:", info.response);
+        }
+      });
+
+      // ✅ Respond with userId for redirection
       res.status(201).json({
-        message: "Registered successfully. Please verify your email.",
-        userId: newUser.rows[0].id,
+        message: "Registered successfully. OTP sent to your email.",
+        userId: user.id,
       });
     } catch (err) {
       console.error(err);
@@ -59,6 +125,7 @@ router.post(
     }
   }
 );
+
 
 // Send OTP route
 router.post("/send-otp", [body("email").isEmail()], async (req, res) => {
