@@ -141,14 +141,14 @@
 // export default router;
 
 
-
 import express from "express";
 import bcrypt from "bcrypt";
-import { db } from "./db.js";
+import db from "./db.js"; // ✅ fixed: use default import
 import { sendOTP } from "./SendOTP.js";
 
 const router = express.Router();
 
+// Register route
 router.post("/register", async (req, res) => {
   try {
     const { name, email, password, type } = req.body;
@@ -178,20 +178,19 @@ router.post("/register", async (req, res) => {
   }
 });
 
+// Send OTP route
 router.post("/send-otp", async (req, res) => {
   try {
     const { email } = req.body;
     if (!email) return res.status(400).json({ message: "Email required" });
 
-    // Find user by email
     const userResult = await db.query("SELECT id FROM users WHERE LOWER(email) = $1", [email.toLowerCase()]);
     if (userResult.rows.length === 0) {
       return res.status(400).json({ message: "Email not registered" });
     }
-    const userId = userResult.rows[0].id;
 
-    // Send OTP to email and update db inside sendOTP function
-    await sendOTP(email);
+    const userId = userResult.rows[0].id;
+    await sendOTP(email); // will also update OTP + timestamp in DB
 
     res.json({ message: "OTP sent to email", userId });
   } catch (error) {
@@ -199,12 +198,12 @@ router.post("/send-otp", async (req, res) => {
   }
 });
 
+// Verify OTP route
 router.post("/verify-otp", async (req, res) => {
   try {
     const { email, otp } = req.body;
     if (!email || !otp) return res.status(400).json({ message: "Missing email or OTP" });
 
-    // Get OTP and timestamp from db for this email
     const result = await db.query(
       "SELECT otp, otp_timestamp, id FROM users WHERE LOWER(email) = $1",
       [email.toLowerCase()]
@@ -229,7 +228,6 @@ router.post("/verify-otp", async (req, res) => {
       return res.status(400).json({ message: "Invalid OTP" });
     }
 
-    // Mark user as verified, clear OTP fields
     await db.query(
       "UPDATE users SET verified = true, otp = NULL, otp_timestamp = NULL WHERE id = $1",
       [userId]
