@@ -142,7 +142,6 @@
 
 
 
-
 import express from "express";
 import path from "path";
 import dotenv from "dotenv";
@@ -156,14 +155,14 @@ import axios from "axios";
 import { fileURLToPath } from "url";
 
 // Import routers
-import householdRouter from "./householdData.js";
-import contactUsRouter from "./contactUs.js";
-import authRouter from "./Authentication.js";
-import businessRouter from "./businessData.js";
-import adminRouter from "./adminData.js";
+import householdRouter from "./server/householdData.js";
+import contactUsRouter from "./server/contactUs.js";
+import authRoutes from "./server/Authentication.js"; // ✅ Corrected route path & name
+import businessRouter from "./server/businessData.js";
+import adminRouter from "./server/adminData.js";
 
-// Import passport config (must be after passport import and before use)
-import "./passport.js";
+// Import passport config
+import "./server/passport.js";
 
 dotenv.config();
 
@@ -195,7 +194,7 @@ app.use(
   cors({
     origin: isProduction
       ? "https://prithwe-carbon-footprint-tracker.onrender.com"
-      : "http://localhost:5173", // frontend dev port
+      : "http://localhost:5173",
     credentials: true,
   })
 );
@@ -210,7 +209,7 @@ app.use(
     resave: false,
     saveUninitialized: false,
     store: new MemoryStore({
-      checkPeriod: 86400000, // prune expired entries every 24h
+      checkPeriod: 86400000,
     }),
     cookie: {
       secure: isProduction,
@@ -227,11 +226,11 @@ app.use(passport.session());
 // ===== Routes =====
 app.use("/api/household", householdRouter);
 app.use("/api/contact", contactUsRouter);
-app.use("/api/auth", authRouter);
+app.use("/api/auth", authRoutes); // ✅ This line is now fixed and clear
 app.use("/api/business", businessRouter);
 app.use("/api/admin", adminRouter);
 
-// ===== Auth status and user type routes =====
+// ===== Auth status and user type =====
 app.get("/api/auth/login/status", (req, res) => {
   if (req.user) {
     req.session.userId = req.user.id;
@@ -250,7 +249,7 @@ app.get("/api/auth/user-type", (req, res) => {
   }
 });
 
-// ===== Serve React frontend in production =====
+// ===== Serve frontend in production =====
 if (isProduction) {
   const clientDist = path.join(__dirname, "../client/dist");
   app.use(express.static(clientDist));
@@ -259,7 +258,7 @@ if (isProduction) {
   app.get("/", (_, res) => res.send("App is under development."));
 }
 
-// ===== Keep Render alive (ping) =====
+// ===== Keep Render alive =====
 const pingURL = isProduction
   ? "https://prithwe-carbon-footprint-tracker.onrender.com/"
   : `http://localhost:${port}/`;
@@ -273,9 +272,10 @@ setInterval(() => {
     .catch((err) => console.error("⚠️ Ping error:", err.message));
 }, 800000);
 
-// ===== Start Server =====
+// ===== Start server =====
 app.listen(port, () => {
   console.log(`🚀 Server listening on port ${port}`);
 });
 
+// Optional if needed elsewhere
 export { db };
