@@ -155,14 +155,14 @@ import axios from "axios";
 import { fileURLToPath } from "url";
 
 // Import routers
-import householdRouter from "./server/householdData.js";
-import contactUsRouter from "./server/contactUs.js";
-import authRoutes from "./server/Authentication.js"; // ✅ Corrected route path & name
-import businessRouter from "./server/businessData.js";
-import adminRouter from "./server/adminData.js";
+import householdRouter from "./householdData.js";
+import contactUsRouter from "./contactUs.js";
+import authRoutes from "./Authentication.js"; // ✅ Corrected route path & name
+import businessRouter from "./businessData.js";
+import adminRouter from "./adminData.js";
 
 // Import passport config
-import "./server/passport.js";
+import "./passport.js";
 
 dotenv.config();
 
