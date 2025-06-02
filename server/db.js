@@ -53,6 +53,33 @@
 
 
 
+// // backend/db.js
+// import dotenv from "dotenv";
+// dotenv.config();
+
+// import pkg from "pg";
+// const { Pool } = pkg;
+
+// const isProduction = process.env.NODE_ENV === "production";
+
+// const pool = new Pool({
+//   connectionString: process.env.PG_CONNECTION_STRING,
+//   ssl: isProduction ? { rejectUnauthorized: false } : false,
+// });
+
+// // Run a test query to check the connection
+// pool.query("SELECT NOW()")
+//   .then(() => console.log("✅ Connected to the PostgreSQL database"))
+//   .catch((err) => console.error("❌ Database connection error:", err));
+
+// // Export query utility for reuse
+// export const query = (text, params) => pool.query(text, params);
+
+// // Export pool if needed for advanced use
+// export default pool;
+
+
+
 // backend/db.js
 import dotenv from "dotenv";
 dotenv.config();
@@ -67,13 +94,13 @@ const pool = new Pool({
   ssl: isProduction ? { rejectUnauthorized: false } : false,
 });
 
-// Run a test query to check the connection
+// Test the connection
 pool.query("SELECT NOW()")
   .then(() => console.log("✅ Connected to the PostgreSQL database"))
   .catch((err) => console.error("❌ Database connection error:", err));
 
-// Export query utility for reuse
-export const query = (text, params) => pool.query(text, params);
-
-// Export pool if needed for advanced use
+// Export pool as default (to be used as db)
 export default pool;
+
+// Also export a query helper if needed
+export const query = (text, params) => pool.query(text, params);
