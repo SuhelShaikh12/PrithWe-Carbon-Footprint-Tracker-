@@ -1,219 +1,244 @@
 
 
 
-import express from "express";
-import bcrypt from "bcryptjs";
-import jwt from "jsonwebtoken";
-import { body, validationResult } from "express-validator";
+// import express from "express";
+// import bcrypt from "bcryptjs";
+// import jwt from "jsonwebtoken";
+// import { body, validationResult } from "express-validator";
+// import { query } from "./db.js";
+// import dotenv from "dotenv";
+// dotenv.config();
 
-import { query } from "./db.js";
-import nodemailer from 'nodemailer';
-import dotenv from 'dotenv';
-dotenv.config();
+// const router = express.Router();
+
+// // ✅ Register Route (No OTP sent here)
+// router.post(
+//   "/register",
+//   [
+//     body("email").isEmail(),
+//     body("password").isLength({ min: 6 }),
+//     body("name").notEmpty(),
+//     body("type").notEmpty(),
+//   ],
+//   async (req, res) => {
+//     const errors = validationResult(req);
+//     if (!errors.isEmpty())
+//       return res.status(400).json({ errors: errors.array() });
+
+//     const { name, email, password, type } = req.body;
+
+//     try {
+//       const exists = await query("SELECT * FROM users WHERE email = $1", [email]);
+//       if (exists.rows.length > 0)
+//         return res.status(400).json({ message: "User already exists" });
+
+//       const hashed = await bcrypt.hash(password, 10);
+//       const newUser = await query(
+//         "INSERT INTO users (name, email, password, type, verified) VALUES ($1, $2, $3, $4, $5) RETURNING *",
+//         [name, email, hashed, type, false]
+//       );
+
+//       res.status(201).json({
+//         message: "Registered successfully. Please verify your email.",
+//         userId: newUser.rows[0].id,
+//       });
+//     } catch (err) {
+//       console.error(err);
+//       res.status(500).json({ message: "Server error" });
+//     }
+//   }
+// );
+
+// // ✅ Send OTP
+// import { sendOTP, generateSixDigitOTP } from "./SendOTP.js";
+
+// router.post("/send-otp", async (req, res) => {
+//   const { email } = req.body;
+//   if (!email) return res.status(400).json({ message: "Email required" });
+
+//   const otp = generateSixDigitOTP();
+//   try {
+//     await sendOTP(email, otp, "Verify your email - OTP code");
+//     res.json({ message: "OTP sent to email" });
+//   } catch (err) {
+//     res.status(500).json({ message: err.message });
+//   }
+// });
+
+// // ✅ Verify OTP
+// router.post(
+//   "/verify-otp",
+//   [body("email").isEmail(), body("otp").isLength({ min: 6, max: 6 })],
+//   async (req, res) => {
+//     const errors = validationResult(req);
+//     if (!errors.isEmpty())
+//       return res.status(400).json({ errors: errors.array() });
+
+//     const { email, otp } = req.body;
+//     const normalizedEmail = email.trim().toLowerCase();
+
+//     try {
+//       const userRes = await query("SELECT * FROM users WHERE LOWER(email) = $1", [normalizedEmail]);
+//       if (userRes.rows.length === 0)
+//         return res.status(404).json({ message: "User not found" });
+
+//       const user = userRes.rows[0];
+//       if (user.verified) return res.status(400).json({ message: "Already verified" });
+
+//       const now = Date.now();
+//       if (user.otp !== otp || !user.otp_timestamp || now - user.otp_timestamp > 10 * 60 * 1000) {
+//         return res.status(400).json({ message: "Invalid or expired OTP" });
+//       }
+
+//       await query("UPDATE users SET verified = true, otp = NULL, otp_timestamp = NULL WHERE email = $1", [email]);
+//       res.json({ message: "Email verified successfully!" });
+//     } catch (err) {
+//       res.status(500).json({ message: "Server error" });
+//     }
+//   }
+// );
+
+// // ✅ Login
+// router.post(
+//   "/login",
+//   [body("email").isEmail(), body("password").exists(), body("type").notEmpty()],
+//   async (req, res) => {
+//     const errors = validationResult(req);
+//     if (!errors.isEmpty())
+//       return res.status(400).json({ errors: errors.array() });
+
+//     const { email, password, type } = req.body;
+
+//     try {
+//       const userResult = await query("SELECT * FROM users WHERE email = $1 AND type = $2", [email, type]);
+//       if (userResult.rows.length === 0)
+//         return res.status(400).json({ message: "Invalid credentials" });
+
+//       const user = userResult.rows[0];
+
+//       if (!user.verified)
+//         return res.status(403).json({ message: "Please verify your email before logging in" });
+
+//       const isMatch = await bcrypt.compare(password, user.password);
+//       if (!isMatch)
+//         return res.status(400).json({ message: "Invalid credentials" });
+
+//       const token = jwt.sign(
+//         { id: user.id, email: user.email, type: user.type },
+//         process.env.JWT_SECRET,
+//         { expiresIn: "1d" }
+//       );
+
+//       res.cookie("token", token, { httpOnly: true, secure: process.env.NODE_ENV === "production" });
+//       res.json({ message: "Login successful!" });
+//     } catch (err) {
+//       console.error(err);
+//       res.status(500).json({ message: "Server error" });
+//     }
+//   }
+// );
+
+// export default router;
+
+
+
+import express from "express";
+import bcrypt from "bcrypt";
+import { db } from "./db.js";
+import { sendOTP } from "./SendOTP.js";
 
 const router = express.Router();
 
-const transporter = nodemailer.createTransport({
-  service: "gmail",
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS,
-  },
-});
-
-// Register route (no OTP sent here)
-
-
-// Register route - Now sends OTP after successful registration
-router.post(
-  "/register",
-  [
-    body("email").isEmail(),
-    body("password").isLength({ min: 6 }),
-    body("name").notEmpty(),
-    body("type").notEmpty(),
-  ],
-  async (req, res) => {
-    const errors = validationResult(req);
-    if (!errors.isEmpty())
-      return res.status(400).json({ errors: errors.array() });
-
-    const { name, email, password, type } = req.body;
-
-    try {
-      const exists = await query("SELECT * FROM users WHERE email = $1", [email]);
-      if (exists.rows.length > 0)
-        return res.status(400).json({ message: "User already exists" });
-
-      const hashed = await bcrypt.hash(password, 10);
-
-      const newUser = await query(
-        "INSERT INTO users (name, email, password, type, verified) VALUES ($1, $2, $3, $4, $5) RETURNING *",
-        [name, email, hashed, type, false]
-      );
-
-      const user = newUser.rows[0];
-
-      // ✅ Send OTP after user creation
-      const otp = Math.floor(100000 + Math.random() * 900000).toString();
-      const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
-
-      await query(
-        "INSERT INTO email_verifications (user_id, otp, expires_at, verified) VALUES ($1, $2, $3, $4)",
-        [user.id, otp, expiresAt, false]
-      );
-
-      const mailOptions = {
-        from: process.env.EMAIL_USER,
-        to: email,
-        subject: "Verify your email - OTP code",
-        text: `Hello ${user.name},\n\nYour verification code is: ${otp}\nIt will expire in 10 minutes.\n\nThank you!`,
-      };
-
-      transporter.sendMail(mailOptions, (error, info) => {
-        if (error) {
-          console.error("Error sending OTP email:", error);
-        } else {
-          console.log("OTP email sent:", info.response);
-        }
-      });
-
-      // ✅ Respond with userId for redirection
-      res.status(201).json({
-        message: "Registered successfully. OTP sent to your email.",
-        userId: user.id,
-      });
-    } catch (err) {
-      console.error(err);
-      res.status(500).json({ message: "Server error" });
-    }
-  }
-);
-
-
-// Send OTP route
-router.post("/send-otp", async (req, res) => {
-  const { email, userId } = req.body;
-
+router.post("/register", async (req, res) => {
   try {
-    let user;
-    if (userId) {
-      const userRes = await query("SELECT * FROM users WHERE id = $1", [userId]);
-      if (userRes.rows.length === 0)
-        return res.status(404).json({ message: "User not found" });
-      user = userRes.rows[0];
-    } else if (email) {
-      const userRes = await query("SELECT * FROM users WHERE email = $1", [email]);
-      if (userRes.rows.length === 0)
-        return res.status(404).json({ message: "User not found" });
-      user = userRes.rows[0];
-    } else {
-      return res.status(400).json({ message: "Missing userId or email" });
+    const { name, email, password, type } = req.body;
+    if (!name || !email || !password || !type) {
+      return res.status(400).json({ message: "Missing fields" });
     }
 
-    const otp = Math.floor(100000 + Math.random() * 900000).toString();
-    const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
+    const existing = await db.query("SELECT * FROM users WHERE LOWER(email) = $1", [email.toLowerCase()]);
+    if (existing.rows.length) {
+      return res.status(400).json({ message: "Email already registered" });
+    }
 
-    await query(
-      "INSERT INTO email_verifications (user_id, otp, expires_at, verified) VALUES ($1, $2, $3, false)",
-      [user.id, otp, expiresAt]
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    const result = await db.query(
+      "INSERT INTO users (name, email, password, type, verified) VALUES ($1, $2, $3, $4, false) RETURNING id",
+      [name, email.toLowerCase(), hashedPassword, type]
     );
 
-    const mailOptions = {
-      from: process.env.EMAIL_USER,
-      to: user.email,
-      subject: "Verify your email - OTP code",
-      text: `Hello ${user.name},\n\nYour verification code is: ${otp}\nIt will expire in 10 minutes.\n\nThank you!`,
-    };
-
-    transporter.sendMail(mailOptions, (error, info) => {
-      if (error) console.error("Error sending OTP email:", error);
-      else console.log("OTP email sent:", info.response);
+    res.status(201).json({
+      message: "Registered successfully. Please verify your email.",
+      userId: result.rows[0].id,
     });
-
-    res.json({ message: "OTP sent to email", userId: user.id });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: "Server error" });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Server error during registration" });
   }
 });
 
+router.post("/send-otp", async (req, res) => {
+  try {
+    const { email } = req.body;
+    if (!email) return res.status(400).json({ message: "Email required" });
 
-// Verify OTP route
-router.post(
-  "/verify-otp",
-  [body("userId").isInt(), body("otp").isLength({ min: 6, max: 6 })],
-  async (req, res) => {
-    const errors = validationResult(req);
-    if (!errors.isEmpty())
-      return res.status(400).json({ errors: errors.array() });
-
-    const { userId, otp } = req.body;
-
-    try {
-      const record = await query(
-        "SELECT * FROM email_verifications WHERE user_id = $1 AND otp = $2 AND verified = false",
-        [userId, otp]
-      );
-
-      if (record.rows.length === 0)
-        return res.status(400).json({ message: "Invalid OTP or already verified" });
-
-      const verification = record.rows[0];
-
-      if (new Date() > new Date(verification.expires_at)) {
-        return res.status(400).json({ message: "OTP expired" });
-      }
-
-      await query("UPDATE email_verifications SET verified = true WHERE id = $1", [verification.id]);
-      await query("UPDATE users SET verified = true WHERE id = $1", [userId]);
-
-      res.json({ message: "Email verified successfully!" });
-    } catch (err) {
-      console.error(err);
-      res.status(500).json({ message: "Server error" });
+    // Find user by email
+    const userResult = await db.query("SELECT id FROM users WHERE LOWER(email) = $1", [email.toLowerCase()]);
+    if (userResult.rows.length === 0) {
+      return res.status(400).json({ message: "Email not registered" });
     }
+    const userId = userResult.rows[0].id;
+
+    // Send OTP to email and update db inside sendOTP function
+    await sendOTP(email);
+
+    res.json({ message: "OTP sent to email", userId });
+  } catch (error) {
+    res.status(400).json({ message: error.message });
   }
-);
+});
 
-// Login route
-router.post(
-  "/login",
-  [body("email").isEmail(), body("password").exists(), body("type").notEmpty()],
-  async (req, res) => {
-    const errors = validationResult(req);
-    if (!errors.isEmpty())
-      return res.status(400).json({ errors: errors.array() });
+router.post("/verify-otp", async (req, res) => {
+  try {
+    const { email, otp } = req.body;
+    if (!email || !otp) return res.status(400).json({ message: "Missing email or OTP" });
 
-    const { email, password, type } = req.body;
+    // Get OTP and timestamp from db for this email
+    const result = await db.query(
+      "SELECT otp, otp_timestamp, id FROM users WHERE LOWER(email) = $1",
+      [email.toLowerCase()]
+    );
 
-    try {
-      const userResult = await query("SELECT * FROM users WHERE email = $1 AND type = $2", [email, type]);
-      if (userResult.rows.length === 0)
-        return res.status(400).json({ message: "Invalid credentials" });
-
-      const user = userResult.rows[0];
-
-      if (!user.verified)
-        return res.status(403).json({ message: "Please verify your email before logging in" });
-
-      const isMatch = await bcrypt.compare(password, user.password);
-      if (!isMatch)
-        return res.status(400).json({ message: "Invalid credentials" });
-
-      const token = jwt.sign(
-        { id: user.id, email: user.email, type: user.type },
-        process.env.JWT_SECRET,
-        { expiresIn: "1d" }
-      );
-
-      res.cookie("token", token, { httpOnly: true, secure: process.env.NODE_ENV === "production" });
-      res.json({ message: "Login successful!" });
-    } catch (err) {
-      console.error(err);
-      res.status(500).json({ message: "Server error" });
+    if (result.rows.length === 0) {
+      return res.status(400).json({ message: "User not found" });
     }
+
+    const { otp: savedOtp, otp_timestamp, id: userId } = result.rows[0];
+    const now = Date.now();
+
+    if (!savedOtp || !otp_timestamp) {
+      return res.status(400).json({ message: "No OTP requested for this email" });
+    }
+
+    if (now - otp_timestamp > 10 * 60 * 1000) {
+      return res.status(400).json({ message: "OTP expired" });
+    }
+
+    if (savedOtp !== otp) {
+      return res.status(400).json({ message: "Invalid OTP" });
+    }
+
+    // Mark user as verified, clear OTP fields
+    await db.query(
+      "UPDATE users SET verified = true, otp = NULL, otp_timestamp = NULL WHERE id = $1",
+      [userId]
+    );
+
+    res.json({ message: "Email verified successfully" });
+  } catch (error) {
+    res.status(500).json({ message: "Server error during OTP verification" });
   }
-);
+});
 
 export default router;
