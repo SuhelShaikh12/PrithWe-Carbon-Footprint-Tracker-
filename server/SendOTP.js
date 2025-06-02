@@ -87,14 +87,77 @@
 // });
 
 
+// import nodemailer from "nodemailer";
+// import dotenv from "dotenv";
+// import fs from "fs";
+// import path from "path";
+// import { db } from "./db.js";
+
+// dotenv.config();
+
+// const transporter = nodemailer.createTransport({
+//   service: "gmail",
+//   auth: {
+//     user: process.env.MAIL,
+//     pass: process.env.APP_PASSWORD,
+//   },
+// });
+
+// export function generateSixDigitOTP() {
+//   return Math.floor(100000 + Math.random() * 900000).toString();
+// }
+
+// const getHtmlTemplate = (otp) => {
+//   const templatePath = path.resolve("src/server/EmailTemplates/SendOtp.html");
+//   const template = fs.readFileSync(templatePath, "utf8");
+//   return template.replace("{{otp}}", otp);
+// };
+
+
+// export async function sendOTP(email) {
+//   const normalizedEmail = email.trim().toLowerCase();
+
+//   const result = await db.query(
+//     "SELECT * FROM users WHERE LOWER(email) = $1 AND verified = false",
+//     [normalizedEmail]
+//   );
+
+//   if (result.rows.length === 0) {
+//     throw new Error("User not found or already verified");
+//   }
+
+//   const otp = generateSixDigitOTP();
+//   const htmlContent = getHtmlTemplate(otp);
+
+//   const mailOptions = {
+//     from: process.env.MAIL,
+//     to: normalizedEmail,
+//     subject: "Your OTP for Prithwe",
+//     text: `Your OTP for Prithwe is: ${otp}`,
+//     html: htmlContent,
+//   };
+
+//   await transporter.sendMail(mailOptions);
+
+//   const timestamp = Date.now();
+//   await db.query(
+//     "UPDATE users SET otp = $1, otp_timestamp = $2 WHERE LOWER(email) = $3",
+//     [otp, timestamp, normalizedEmail]
+//   );
+
+//   return result.rows[0].id; // userId
+// }
+
+
 import nodemailer from "nodemailer";
 import dotenv from "dotenv";
 import fs from "fs";
 import path from "path";
-import { db } from "./db.js";
+import db from "./db.js"; // ✅ Correct default import
 
 dotenv.config();
 
+// Setup transporter with Gmail
 const transporter = nodemailer.createTransport({
   service: "gmail",
   auth: {
@@ -103,17 +166,19 @@ const transporter = nodemailer.createTransport({
   },
 });
 
+// Generate 6-digit OTP
 export function generateSixDigitOTP() {
   return Math.floor(100000 + Math.random() * 900000).toString();
 }
 
+// Load and inject OTP into the HTML email template
 const getHtmlTemplate = (otp) => {
   const templatePath = path.resolve("src/server/EmailTemplates/SendOtp.html");
   const template = fs.readFileSync(templatePath, "utf8");
   return template.replace("{{otp}}", otp);
 };
 
-
+// Send OTP to the user's email
 export async function sendOTP(email) {
   const normalizedEmail = email.trim().toLowerCase();
 
@@ -137,6 +202,7 @@ export async function sendOTP(email) {
     html: htmlContent,
   };
 
+  // Send OTP email
   await transporter.sendMail(mailOptions);
 
   const timestamp = Date.now();
@@ -145,5 +211,5 @@ export async function sendOTP(email) {
     [otp, timestamp, normalizedEmail]
   );
 
-  return result.rows[0].id; // userId
+  return result.rows[0].id; // Return userId for verification step
 }
