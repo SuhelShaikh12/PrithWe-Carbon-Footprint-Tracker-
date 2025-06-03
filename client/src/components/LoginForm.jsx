@@ -337,7 +337,6 @@
 
 // export default LoginForm;
 
-
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
@@ -346,13 +345,13 @@ import { toast } from "react-toastify";
 function LoginForm({ setLoggedIn }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [type, setType] = useState("");
+  const [type, setType] = useState(""); // add user type state
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
   const validateForm = () => {
     if (!email || !password || !type) {
-      toast.error("Fill all fields");
+      toast.error("Please fill in email, password, and select user type");
       return false;
     }
     return true;
@@ -365,12 +364,12 @@ function LoginForm({ setLoggedIn }) {
     try {
       const res = await axios.post(
         "/api/auth/login",
-        { email, password, type },
+        { email, password, type },  // send type as well
         { withCredentials: true }
       );
       toast.success(res.data.message || "Login successful!");
       setLoggedIn(true);
-      navigate("/calculator"); // or dashboard or wherever
+      navigate("/calculator"); // Redirect to calculator or dashboard
     } catch (err) {
       toast.error(err.response?.data?.message || "Login failed");
       setLoggedIn(false);
@@ -381,13 +380,19 @@ function LoginForm({ setLoggedIn }) {
 
   return (
     <div>
-      {/* Your login inputs */}
-      <input value={email} onChange={e => setEmail(e.target.value)} placeholder="Email" />
+      <input
+        type="email"
+        value={email}
+        onChange={e => setEmail(e.target.value)}
+        placeholder="Email"
+        autoComplete="email"
+      />
       <input
         type="password"
         value={password}
         onChange={e => setPassword(e.target.value)}
         placeholder="Password"
+        autoComplete="current-password"
       />
       <select value={type} onChange={e => setType(e.target.value)}>
         <option value="">Select User Type</option>
@@ -402,3 +407,4 @@ function LoginForm({ setLoggedIn }) {
 }
 
 export default LoginForm;
+
