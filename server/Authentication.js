@@ -129,91 +129,56 @@
 // export default router;
 
 
-
-
 import express from "express";
 import bcrypt from "bcrypt";
-import { db } from "./index.js";
+import passport from "passport";
+import { db } from "./index.js";  // your db connection
 
 const router = express.Router();
 
-// Register route
+// Registration route
 router.post("/register", async (req, res) => {
   try {
     const { name, email, password, type } = req.body;
 
     if (!name || !email || !password || !type) {
-      return res.status(400).json({ message: "Missing required fields" });
+      return res.status(400).json({ message: "All fields are required." });
     }
 
     const normalizedEmail = email.trim().toLowerCase();
 
-    // Check if email already registered
-    const existing = await db.query(
-      "SELECT 1 FROM users WHERE LOWER(email) = $1",
-      [normalizedEmail]
-    );
-
-    if (existing.rows.length > 0) {
-      return res.status(400).json({ message: "Email already registered" });
+    // Check if email exists
+    const userExists = await db.query("SELECT 1 FROM users WHERE LOWER(email) = $1", [normalizedEmail]);
+    if (userExists.rows.length > 0) {
+      return res.status(400).json({ message: "Email already registered." });
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
     const result = await db.query(
-      `INSERT INTO users (name, email, password, type)
-       VALUES ($1, $2, $3, $4)
-       RETURNING id`,
+      "INSERT INTO users (name, email, password, type) VALUES ($1, $2, $3, $4) RETURNING id",
       [name, normalizedEmail, hashedPassword, type]
     );
 
-    res.status(201).json({
-      message: "Registered successfully",
-      userId: result.rows[0].id,
-    });
+    res.status(201).json({ message: "Registration successful! Please log in." });
   } catch (error) {
     console.error("Registration error:", error);
-    res.status(500).json({ message: "Server error during registration" });
+    res.status(500).json({ message: "Server error during registration." });
   }
 });
 
 // Login route
-router.post("/login", async (req, res) => {
-  try {
-    const { email, password } = req.body;
-    const normalizedEmail = email.trim().toLowerCase();
-
-    const result = await db.query(
-      "SELECT id, password, name, type FROM users WHERE LOWER(email) = $1",
-      [normalizedEmail]
-    );
-
-    if (result.rows.length === 0) {
-      return res.status(401).json({ message: "Invalid credentials" });
+router.post("/login", (req, res, next) => {
+  passport.authenticate("local", (err, user, info) => {
+    if (err) return next(err);
+    if (!user) {
+      return res.status(401).json({ message: info.message || "Invalid credentials." });
     }
-
-    const user = result.rows[0];
-    const isMatch = await bcrypt.compare(password, user.password);
-
-    if (!isMatch) {
-      return res.status(401).json({ message: "Invalid credentials" });
-    }
-
-    // Optionally set session or token here
-    // req.session.userId = user.id; or use JWT
-    res.status(200).json({
-      message: "Login successful",
-      user: {
-        id: user.id,
-        name: user.name,
-        email: normalizedEmail,
-        type: user.type,
-      },
+    req.logIn(user, (err) => {
+      if (err) return next(err);
+      return res.status(200).json({ message: "Login successful!", user });
     });
-  } catch (error) {
-    console.error("Login error:", error);
-    res.status(500).json({ message: "Server error during login" });
-  }
+  })(req, res, next);
 });
 
 export default router;
