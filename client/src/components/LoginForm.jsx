@@ -337,6 +337,9 @@
 
 // export default LoginForm;
 
+
+
+
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
@@ -345,7 +348,7 @@ import { toast } from "react-toastify";
 function LoginForm({ setLoggedIn }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [type, setType] = useState(""); // add user type state
+  const [type, setType] = useState(""); // Household or Business
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
@@ -362,14 +365,15 @@ function LoginForm({ setLoggedIn }) {
 
     setLoading(true);
     try {
-      const res = await axios.post(
+      const response = await axios.post(
         "/api/auth/login",
-        { email, password, type },  // send type as well
+        { email, password, type }, // include user type in request
         { withCredentials: true }
       );
-      toast.success(res.data.message || "Login successful!");
+
+      toast.success(response.data.message || "Login successful!");
       setLoggedIn(true);
-      navigate("/calculator"); // Redirect to calculator or dashboard
+      navigate("/dashboard"); // Redirect to dashboard after login
     } catch (err) {
       toast.error(err.response?.data?.message || "Login failed");
       setLoggedIn(false);
@@ -407,4 +411,3 @@ function LoginForm({ setLoggedIn }) {
 }
 
 export default LoginForm;
-

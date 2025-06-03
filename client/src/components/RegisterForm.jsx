@@ -165,29 +165,26 @@
 // export default RegistrFom;
 
 
-
-
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { toast } from "react-toastify";
 
-function RegistrFom() {
+function RegisterForm() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [type, setType] = useState(""); // "Household" or "Business"
+  const [type, setType] = useState(""); // Household or Business
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
   const validateForm = () => {
     if (!name || !email || !password || !type) {
-      toast.error("Please fill all fields");
+      toast.error("Please fill in all fields");
       return false;
     }
-    // Simple email regex validation
     if (!/^[\w-.]+@([\w-]+\.)+[\w-]{2,4}$/.test(email)) {
-      toast.error("Invalid email");
+      toast.error("Invalid email format");
       return false;
     }
     if (password.length < 6) {
@@ -199,8 +196,8 @@ function RegistrFom() {
 
   const handleRegister = async () => {
     if (!validateForm()) return;
-    setLoading(true);
 
+    setLoading(true);
     try {
       const res = await axios.post(
         "/api/auth/register",
@@ -208,7 +205,7 @@ function RegistrFom() {
         { withCredentials: true }
       );
       toast.success(res.data.message || "Registration successful!");
-      navigate("/login"); // Redirect to login after success
+      navigate("/login"); // Redirect to login after registration
     } catch (err) {
       toast.error(err.response?.data?.message || "Registration failed");
     } finally {
@@ -251,4 +248,4 @@ function RegistrFom() {
   );
 }
 
-export default RegistrFom;
+export default RegisterForm;

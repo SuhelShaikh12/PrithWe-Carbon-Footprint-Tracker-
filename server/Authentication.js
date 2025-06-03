@@ -129,10 +129,69 @@
 // export default router;
 
 
+// import express from "express";
+// import bcrypt from "bcrypt";
+// import passport from "passport";
+// import { db } from "./index.js";  // your db connection
+
+// const router = express.Router();
+
+// // Registration route
+// router.post("/register", async (req, res) => {
+//   try {
+//     const { name, email, password, type } = req.body;
+
+//     if (!name || !email || !password || !type) {
+//       return res.status(400).json({ message: "All fields are required." });
+//     }
+
+//     const normalizedEmail = email.trim().toLowerCase();
+
+//     // Check if email exists
+//     const userExists = await db.query("SELECT 1 FROM users WHERE LOWER(email) = $1", [normalizedEmail]);
+//     if (userExists.rows.length > 0) {
+//       return res.status(400).json({ message: "Email already registered." });
+//     }
+
+//     const hashedPassword = await bcrypt.hash(password, 10);
+
+//     const result = await db.query(
+//       "INSERT INTO users (name, email, password, type) VALUES ($1, $2, $3, $4) RETURNING id",
+//       [name, normalizedEmail, hashedPassword, type]
+//     );
+
+//     res.status(201).json({ message: "Registration successful! Please log in." });
+//   } catch (error) {
+//     console.error("Registration error:", error);
+//     res.status(500).json({ message: "Server error during registration." });
+//   }
+// });
+
+// // Login route
+// router.post("/login", (req, res, next) => {
+//   passport.authenticate("local", (err, user, info) => {
+//     if (err) return next(err);
+//     if (!user) {
+//       return res.status(401).json({ message: info.message || "Invalid credentials." });
+//     }
+//     req.logIn(user, (err) => {
+//       if (err) return next(err);
+//       return res.status(200).json({ message: "Login successful!", user });
+//     });
+//   })(req, res, next);
+// });
+
+// export default router;
+
+
+
+
+
+
 import express from "express";
 import bcrypt from "bcrypt";
 import passport from "passport";
-import { db } from "./index.js";  // your db connection
+import { db } from "./index.js"; // your DB client
 
 const router = express.Router();
 
@@ -147,16 +206,20 @@ router.post("/register", async (req, res) => {
 
     const normalizedEmail = email.trim().toLowerCase();
 
-    // Check if email exists
-    const userExists = await db.query("SELECT 1 FROM users WHERE LOWER(email) = $1", [normalizedEmail]);
+    // Check if the email already exists
+    const userExists = await db.query(
+      "SELECT 1 FROM users WHERE LOWER(email) = $1",
+      [normalizedEmail]
+    );
+
     if (userExists.rows.length > 0) {
       return res.status(400).json({ message: "Email already registered." });
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    const result = await db.query(
-      "INSERT INTO users (name, email, password, type) VALUES ($1, $2, $3, $4) RETURNING id",
+    await db.query(
+      "INSERT INTO users (name, email, password, type) VALUES ($1, $2, $3, $4)",
       [name, normalizedEmail, hashedPassword, type]
     );
 
@@ -171,12 +234,22 @@ router.post("/register", async (req, res) => {
 router.post("/login", (req, res, next) => {
   passport.authenticate("local", (err, user, info) => {
     if (err) return next(err);
+
     if (!user) {
       return res.status(401).json({ message: info.message || "Invalid credentials." });
     }
+
     req.logIn(user, (err) => {
       if (err) return next(err);
-      return res.status(200).json({ message: "Login successful!", user });
+      return res.status(200).json({
+        message: "Login successful!",
+        user: {
+          id: user.id,
+          name: user.name,
+          email: user.email,
+          type: user.type,
+        },
+      });
     });
   })(req, res, next);
 });
