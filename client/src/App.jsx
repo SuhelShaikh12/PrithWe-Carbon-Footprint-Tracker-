@@ -261,7 +261,7 @@ function App() {
   <Route
     path="/login"
     element={
-      loggedIn ? <Navigate to="/calculator" /> : <LoginForm setLoggedIn={setLoggedIn} />
+      loggedIn ? <Navigate to="/dashboard" /> : <LoginForm setLoggedIn={setLoggedIn} />
     }
   />
 
