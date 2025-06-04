@@ -221,9 +221,9 @@
 
 
 // SentOTP.js
+// SentOTP.js
 import nodemailer from 'nodemailer';
 
-// Generate a 6-digit numeric OTP
 export function generateOTP() {
   let otp = '';
   const chars = '0123456789';
@@ -233,7 +233,6 @@ export function generateOTP() {
   return otp;
 }
 
-// Send OTP to email using Nodemailer
 export async function sendOTPEmail(email, otp) {
   const transporter = nodemailer.createTransport({
     host: process.env.MAIL_HOST || 'smtp.gmail.com',

@@ -82,6 +82,7 @@
 
 // backend/db.js
 // db.js
+// db.js
 import dotenv from "dotenv";
 dotenv.config();
 
@@ -95,13 +96,10 @@ const pool = new Pool({
   ssl: isProduction ? { rejectUnauthorized: false } : false,
 });
 
-// Test the connection
 pool.query("SELECT NOW()")
   .then(() => console.log("✅ Connected to the PostgreSQL database"))
   .catch((err) => console.error("❌ Database connection error:", err));
 
-// Export pool as named export
 export { pool };
 
-// Optional: export a query helper function
 export const query = (text, params) => pool.query(text, params);

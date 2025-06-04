@@ -69,10 +69,11 @@
 
 // passport.js
 // passport.js (ESM version)
+// passport.js
 import passport from 'passport';
 import { Strategy as LocalStrategy } from 'passport-local';
 import bcrypt from 'bcrypt';
-import { pool } from './db.js';
+import { pool } from './db.js'; // named import
 
 passport.use(new LocalStrategy(
   { usernameField: 'email' },

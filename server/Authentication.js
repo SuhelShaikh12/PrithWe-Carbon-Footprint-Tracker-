@@ -77,15 +77,17 @@
 // Authentication.js (Express routes for register, login, OTP)
 
 // Authentication.js
+// Authentication.js
 import express from 'express';
 import bcrypt from 'bcrypt';
 import passport from 'passport';
-import pool from './db.js'; // default export
+import { pool } from './db.js'; // named import
 import { generateOTP, sendOTPEmail } from './SentOTP.js';
 
 const router = express.Router();
 
-// POST /auth/register
+// ... rest of your code unchanged ...
+
 router.post('/register', async (req, res) => {
   const { name, email, password, type } = req.body;
   if (!name || !email || !password) {
