@@ -167,4 +167,6 @@ router.post('/login', passport.authenticate('local', {
   failureFlash: true
 }));
 
-module.exports = router;
+// At the end of Authentication.js
+export default router;
+
