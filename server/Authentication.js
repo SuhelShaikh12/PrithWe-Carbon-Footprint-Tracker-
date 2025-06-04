@@ -1,158 +1,34 @@
 
 
-
-// import express from 'express';
-// import bcrypt from 'bcrypt';
-// import passport from 'passport';
-// import { pool } from './db.js';
-// import { generateOTP, sendOTPEmail } from './SentOTP.js';
-
-// const router = express.Router();
-
-// // ✅ POST /api/auth/register
-// router.post('/register', async (req, res) => {
-//   const { name, email, password, type } = req.body;
-//   if (!name || !email || !password) {
-//     return res.status(400).json({ message: 'Missing fields' });
-//   }
-//   try {
-//     // Check if user already exists
-//     const existing = await pool.query('SELECT * FROM users WHERE email=$1', [email]);
-//     if (existing.rows.length > 0) {
-//       return res.status(400).json({ message: 'User already exists' });
-//     }
-
-//     const hashed = await bcrypt.hash(password, 10);
-
-//     // Save user with email_verified=false
-//     await pool.query(
-//       'INSERT INTO users (name, email, password, type, email_verified) VALUES ($1, $2, $3, $4, false)',
-//       [name, email, hashed, type]
-//     );
-
-//     // Generate OTP and expiry
-//     const otp = generateOTP();
-//     const expires = new Date(Date.now() + 15 * 60 * 1000); // 15 mins from now
-
-//     await pool.query(
-//       'UPDATE users SET otp=$1, otp_timestamp=$2 WHERE email=$3',
-//       [otp, expires, email]
-//     );
-
-//     await sendOTPEmail(email, otp);
-
-//     return res.status(201).json({ message: 'Registered. OTP sent to email.' });
-//   } catch (err) {
-//     console.error('Register error:', err);
-//     return res.status(500).json({ message: 'Registration error' });
-//   }
-// });
-
-// // ✅ POST /api/auth/send-otp (for resend)
-// router.post('/send-otp', async (req, res) => {
-//   const { email } = req.body;
-//   if (!email) return res.status(400).json({ message: "Email is required." });
-
-//   try {
-//     const { rows } = await pool.query('SELECT * FROM users WHERE LOWER(email) = $1', [email.toLowerCase()]);
-//     if (!rows.length) return res.status(404).json({ message: 'User not found' });
-
-//     const user = rows[0];
-//     if (user.email_verified) {
-//       return res.status(400).json({ message: 'Email already verified' });
-//     }
-
-//     const otp = generateOTP();
-//     const expires = new Date(Date.now() + 15 * 60 * 1000);
-
-//     await pool.query(
-//       'UPDATE users SET otp=$1, otp_timestamp=$2 WHERE email=$3',
-//       [otp, expires, user.email]
-//     );
-
-//     await sendOTPEmail(user.email, otp);
-//     return res.json({ message: 'OTP resent to email' });
-//   } catch (err) {
-//     console.error("Send OTP error:", err);
-//     return res.status(500).json({ message: 'Error sending OTP' });
-//   }
-// });
-
-// // ✅ POST /api/auth/verify-otp
-// router.post('/verify-otp', async (req, res, next) => {
-//   const { email, otp } = req.body;
-//   try {
-//     const { rows } = await pool.query('SELECT * FROM users WHERE email=$1', [email]);
-//     if (!rows.length) return res.status(404).json({ message: 'User not found' });
-
-//     const user = rows[0];
-//     const now = new Date();
-
-//     if (!user.otp || !user.otp_timestamp || user.otp !== otp || now > user.otp_timestamp) {
-//       return res.status(400).json({ message: 'Invalid or expired OTP' });
-//     }
-
-//     await pool.query(
-//       'UPDATE users SET email_verified=true, otp=NULL, otp_timestamp=NULL WHERE email=$1',
-//       [email]
-//     );
-
-//     req.login(user, (err) => {
-//       if (err) return next(err);
-//       return res.json({ message: 'Email verified and logged in' });
-//     });
-//   } catch (err) {
-//     console.error('OTP verification error:', err);
-//     return res.status(500).json({ message: 'Verification failed' });
-//   }
-// });
-
-// // ✅ POST /api/auth/login (checks if email is verified)
-// router.post('/login', (req, res, next) => {
-//   passport.authenticate('local', async (err, user, info) => {
-//     if (err) return next(err);
-//     if (!user) return res.status(401).json({ message: 'Invalid email or password' });
-
-//     if (!user.email_verified) {
-//       return res.status(403).json({ message: 'Please verify your email before logging in.' });
-//     }
-
-//     req.logIn(user, (err) => {
-//       if (err) return next(err);
-//       return res.json({ message: 'Login successful' });
-//     });
-//   })(req, res, next);
-// });
-
-// export default router;
-
-
-// import express from 'express';
-// import bcrypt from 'bcrypt';
-// import passport from 'passport';
-// import { pool } from './db.js';
-// import { generateOTP, sendOTPEmail } from './SentOTP.js';
+// import express from "express";
+// import bcrypt from "bcrypt";
+// import passport from "passport";
+// import { pool } from "./db.js";
+// import { generateOTP, sendOTPEmail } from "./SentOTP.js";
 
 // const router = express.Router();
-
+// app.use('/api/auth', authRoutes);
 // // POST /api/auth/register
-// router.post('/register', async (req, res) => {
+// router.post("/register", async (req, res) => {
 //   const { name, email, password, type } = req.body;
 //   if (!name || !email || !password) {
-//     return res.status(400).json({ message: 'Missing fields' });
+//     return res.status(400).json({ message: "Missing fields" });
 //   }
 //   try {
 //     // Check if user already exists
-//     const existing = await pool.query('SELECT * FROM users WHERE email=$1', [email.toLowerCase()]);
+//     const existing = await pool.query(
+//       "SELECT * FROM users WHERE email=$1",
+//       [email.toLowerCase()]
+//     );
 //     if (existing.rows.length > 0) {
-//       return res.status(400).json({ message: 'User already exists' });
+//       return res.status(400).json({ message: "User already exists" });
 //     }
 
 //     const hashed = await bcrypt.hash(password, 10);
 
 //     // Save user with email_verified = false
 //     await pool.query(
-//       'INSERT INTO users (name, email, password, type, email_verified) VALUES ($1, $2, $3, $4, false)',
+//       "INSERT INTO users (name, email, password, type, email_verified) VALUES ($1, $2, $3, $4, false)",
 //       [name, email.toLowerCase(), hashed, type]
 //     );
 
@@ -161,108 +37,122 @@
 //     const expires = new Date(Date.now() + 15 * 60 * 1000);
 
 //     await pool.query(
-//       'UPDATE users SET otp=$1, otp_timestamp=$2 WHERE email=$3',
+//       "UPDATE users SET otp=$1, otp_timestamp=$2 WHERE email=$3",
 //       [otp, expires, email.toLowerCase()]
 //     );
 
 //     await sendOTPEmail(email, otp);
 
-//     return res.status(201).json({ message: 'Registered successfully. OTP sent to email.' });
+//     return res
+//       .status(201)
+//       .json({ message: "Registered successfully. OTP sent to email." });
 //   } catch (err) {
-//     console.error('Register error:', err);
-//     return res.status(500).json({ message: 'Registration error' });
+//     console.error("Register error:", err);
+//     return res.status(500).json({ message: "Registration error" });
 //   }
 // });
 
 // // POST /api/auth/send-otp (resend OTP)
-// router.post('/send-otp', async (req, res) => {
+// router.post("/send-otp", async (req, res) => {
 //   const { email } = req.body;
 //   if (!email) return res.status(400).json({ message: "Email is required." });
 
 //   try {
-//     const { rows } = await pool.query('SELECT * FROM users WHERE LOWER(email) = $1', [email.toLowerCase()]);
-//     if (!rows.length) return res.status(404).json({ message: 'User not found' });
+//     const { rows } = await pool.query(
+//       "SELECT * FROM users WHERE LOWER(email) = $1",
+//       [email.toLowerCase()]
+//     );
+//     if (!rows.length) return res.status(404).json({ message: "User not found" });
 
 //     const user = rows[0];
 //     if (user.email_verified) {
-//       return res.status(400).json({ message: 'Email already verified' });
+//       return res.status(400).json({ message: "Email already verified" });
 //     }
 
 //     const otp = generateOTP();
 //     const expires = new Date(Date.now() + 15 * 60 * 1000);
 
 //     await pool.query(
-//       'UPDATE users SET otp=$1, otp_timestamp=$2 WHERE email=$3',
+//       "UPDATE users SET otp=$1, otp_timestamp=$2 WHERE email=$3",
 //       [otp, expires, user.email]
 //     );
 
 //     await sendOTPEmail(user.email, otp);
-//     return res.json({ message: 'OTP resent to email' });
+//     return res.json({ message: "OTP resent to email" });
 //   } catch (err) {
 //     console.error("Send OTP error:", err);
-//     return res.status(500).json({ message: 'Error sending OTP' });
+//     return res.status(500).json({ message: "Error sending OTP" });
 //   }
 // });
 
 // // POST /api/auth/verify-otp
-// router.post('/verify-otp', async (req, res, next) => {
+// router.post("/verify-otp", async (req, res, next) => {
 //   const { email, otp } = req.body;
-//   if (!email || !otp) return res.status(400).json({ message: "Email and OTP required" });
+//   if (!email || !otp)
+//     return res.status(400).json({ message: "Email and OTP required" });
 
 //   try {
-//     const { rows } = await pool.query('SELECT * FROM users WHERE email=$1', [email.toLowerCase()]);
-//     if (!rows.length) return res.status(404).json({ message: 'User not found' });
+//     const { rows } = await pool.query("SELECT * FROM users WHERE email=$1", [
+//       email.toLowerCase(),
+//     ]);
+//     if (!rows.length) return res.status(404).json({ message: "User not found" });
 
 //     const user = rows[0];
 //     const now = new Date();
 
-//     if (!user.otp || !user.otp_timestamp || user.otp !== otp || now > user.otp_timestamp) {
-//       return res.status(400).json({ message: 'Invalid or expired OTP' });
+//     if (
+//       !user.otp ||
+//       !user.otp_timestamp ||
+//       user.otp !== otp ||
+//       now > user.otp_timestamp
+//     ) {
+//       return res.status(400).json({ message: "Invalid or expired OTP" });
 //     }
 
 //     await pool.query(
-//       'UPDATE users SET email_verified=true, otp=NULL, otp_timestamp=NULL WHERE email=$1',
+//       "UPDATE users SET email_verified=true, otp=NULL, otp_timestamp=NULL WHERE email=$1",
 //       [email.toLowerCase()]
 //     );
 
 //     // Automatically login user after verification
 //     req.login(user, (err) => {
 //       if (err) return next(err);
-//       return res.json({ message: 'Email verified and logged in' });
+//       return res.json({ message: "Email verified and logged in" });
 //     });
 //   } catch (err) {
-//     console.error('OTP verification error:', err);
-//     return res.status(500).json({ message: 'Verification failed' });
+//     console.error("OTP verification error:", err);
+//     return res.status(500).json({ message: "Verification failed" });
 //   }
 // });
 
 // // POST /api/auth/login (passport with verification check)
-// router.post('/login', (req, res, next) => {
-//   passport.authenticate('local', async (err, user, info) => {
+// router.post("/login", (req, res, next) => {
+//   passport.authenticate("local", async (err, user, info) => {
 //     if (err) {
-//       console.error('Login error:', err);
-//       return res.status(500).json({ message: 'Internal server error' });
+//       console.error("Login error:", err);
+//       return res.status(500).json({ message: "Internal server error" });
 //     }
 //     if (!user) {
-//       return res.status(401).json({ message: info?.message || 'Invalid credentials' });
+//       return res.status(401).json({ message: info?.message || "Invalid credentials" });
 //     }
 
 //     if (!user.email_verified) {
-//       return res.status(403).json({ message: 'Please verify your email before logging in' });
+//       return res
+//         .status(403)
+//         .json({ message: "Please verify your email before logging in" });
 //     }
 
 //     req.login(user, (err) => {
 //       if (err) {
-//         console.error('Login error:', err);
-//         return res.status(500).json({ message: 'Login failed' });
+//         console.error("Login error:", err);
+//         return res.status(500).json({ message: "Login failed" });
 //       }
-//       return res.json({ message: 'Login successful' });
+//       return res.json({ message: "Login successful" });
 //     });
 //   })(req, res, next);
 // });
 
 // export default router;
-
 
 
 import express from "express";
@@ -273,146 +163,89 @@ import { generateOTP, sendOTPEmail } from "./SentOTP.js";
 
 const router = express.Router();
 
-// POST /api/auth/register
 router.post("/register", async (req, res) => {
   const { name, email, password, type } = req.body;
-  if (!name || !email || !password) {
-    return res.status(400).json({ message: "Missing fields" });
-  }
+  if (!name || !email || !password) return res.status(400).json({ message: "Missing fields" });
+
   try {
-    // Check if user already exists
-    const existing = await pool.query(
-      "SELECT * FROM users WHERE email=$1",
-      [email.toLowerCase()]
-    );
-    if (existing.rows.length > 0) {
-      return res.status(400).json({ message: "User already exists" });
-    }
+    const existing = await pool.query("SELECT * FROM users WHERE email=$1", [email.toLowerCase()]);
+    if (existing.rows.length) return res.status(400).json({ message: "User already exists" });
 
     const hashed = await bcrypt.hash(password, 10);
-
-    // Save user with email_verified = false
     await pool.query(
       "INSERT INTO users (name, email, password, type, email_verified) VALUES ($1, $2, $3, $4, false)",
       [name, email.toLowerCase(), hashed, type]
     );
 
-    // Generate OTP and expiry (15 mins)
     const otp = generateOTP();
     const expires = new Date(Date.now() + 15 * 60 * 1000);
-
-    await pool.query(
-      "UPDATE users SET otp=$1, otp_timestamp=$2 WHERE email=$3",
-      [otp, expires, email.toLowerCase()]
-    );
-
+    await pool.query("UPDATE users SET otp=$1, otp_timestamp=$2 WHERE email=$3", [otp, expires, email.toLowerCase()]);
     await sendOTPEmail(email, otp);
 
-    return res
-      .status(201)
-      .json({ message: "Registered successfully. OTP sent to email." });
+    res.status(201).json({ message: "Registered. OTP sent." });
   } catch (err) {
-    console.error("Register error:", err);
-    return res.status(500).json({ message: "Registration error" });
+    console.error(err);
+    res.status(500).json({ message: "Registration failed" });
   }
 });
 
-// POST /api/auth/send-otp (resend OTP)
 router.post("/send-otp", async (req, res) => {
   const { email } = req.body;
   if (!email) return res.status(400).json({ message: "Email is required." });
 
   try {
-    const { rows } = await pool.query(
-      "SELECT * FROM users WHERE LOWER(email) = $1",
-      [email.toLowerCase()]
-    );
+    const { rows } = await pool.query("SELECT * FROM users WHERE LOWER(email) = $1", [email.toLowerCase()]);
     if (!rows.length) return res.status(404).json({ message: "User not found" });
-
     const user = rows[0];
-    if (user.email_verified) {
-      return res.status(400).json({ message: "Email already verified" });
-    }
+
+    if (user.email_verified) return res.status(400).json({ message: "Already verified" });
 
     const otp = generateOTP();
     const expires = new Date(Date.now() + 15 * 60 * 1000);
+    await pool.query("UPDATE users SET otp=$1, otp_timestamp=$2 WHERE email=$3", [otp, expires, email.toLowerCase()]);
+    await sendOTPEmail(email, otp);
 
-    await pool.query(
-      "UPDATE users SET otp=$1, otp_timestamp=$2 WHERE email=$3",
-      [otp, expires, user.email]
-    );
-
-    await sendOTPEmail(user.email, otp);
-    return res.json({ message: "OTP resent to email" });
+    res.json({ message: "OTP resent" });
   } catch (err) {
     console.error("Send OTP error:", err);
-    return res.status(500).json({ message: "Error sending OTP" });
+    res.status(500).json({ message: "Failed to send OTP" });
   }
 });
 
-// POST /api/auth/verify-otp
 router.post("/verify-otp", async (req, res, next) => {
   const { email, otp } = req.body;
-  if (!email || !otp)
-    return res.status(400).json({ message: "Email and OTP required" });
+  if (!email || !otp) return res.status(400).json({ message: "Email and OTP required" });
 
   try {
-    const { rows } = await pool.query("SELECT * FROM users WHERE email=$1", [
-      email.toLowerCase(),
-    ]);
+    const { rows } = await pool.query("SELECT * FROM users WHERE email=$1", [email.toLowerCase()]);
     if (!rows.length) return res.status(404).json({ message: "User not found" });
 
     const user = rows[0];
-    const now = new Date();
-
-    if (
-      !user.otp ||
-      !user.otp_timestamp ||
-      user.otp !== otp ||
-      now > user.otp_timestamp
-    ) {
+    if (!user.otp || !user.otp_timestamp || user.otp !== otp || new Date() > user.otp_timestamp)
       return res.status(400).json({ message: "Invalid or expired OTP" });
-    }
 
-    await pool.query(
-      "UPDATE users SET email_verified=true, otp=NULL, otp_timestamp=NULL WHERE email=$1",
-      [email.toLowerCase()]
-    );
+    await pool.query("UPDATE users SET email_verified=true, otp=NULL, otp_timestamp=NULL WHERE email=$1", [email.toLowerCase()]);
 
-    // Automatically login user after verification
     req.login(user, (err) => {
       if (err) return next(err);
-      return res.json({ message: "Email verified and logged in" });
+      res.json({ message: "Email verified and logged in" });
     });
   } catch (err) {
-    console.error("OTP verification error:", err);
-    return res.status(500).json({ message: "Verification failed" });
+    console.error(err);
+    res.status(500).json({ message: "Verification error" });
   }
 });
 
-// POST /api/auth/login (passport with verification check)
 router.post("/login", (req, res, next) => {
-  passport.authenticate("local", async (err, user, info) => {
-    if (err) {
-      console.error("Login error:", err);
-      return res.status(500).json({ message: "Internal server error" });
-    }
-    if (!user) {
-      return res.status(401).json({ message: info?.message || "Invalid credentials" });
-    }
+  passport.authenticate("local", (err, user, info) => {
+    if (err) return res.status(500).json({ message: "Internal error" });
+    if (!user) return res.status(401).json({ message: info?.message || "Login failed" });
 
-    if (!user.email_verified) {
-      return res
-        .status(403)
-        .json({ message: "Please verify your email before logging in" });
-    }
+    if (!user.email_verified) return res.status(403).json({ message: "Verify email first" });
 
     req.login(user, (err) => {
-      if (err) {
-        console.error("Login error:", err);
-        return res.status(500).json({ message: "Login failed" });
-      }
-      return res.json({ message: "Login successful" });
+      if (err) return res.status(500).json({ message: "Login error" });
+      res.json({ message: "Login successful" });
     });
   })(req, res, next);
 });
