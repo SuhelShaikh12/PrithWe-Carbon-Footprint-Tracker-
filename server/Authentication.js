@@ -75,11 +75,13 @@
 
 
 // Authentication.js (Express routes for register, login, OTP)
-const express = require('express');
-const bcrypt = require('bcrypt');
-const passport = require('passport');
-const { pool } = require('./db'); // Assume a pg Pool is set up
-const { generateOTP, sendOTPEmail } = require('./SentOTP');
+
+// Authentication.js
+import express from 'express';
+import bcrypt from 'bcrypt';
+import passport from 'passport';
+import pool from './db.js'; // default export
+import { generateOTP, sendOTPEmail } from './SentOTP.js';
 
 const router = express.Router();
 
@@ -90,7 +92,6 @@ router.post('/register', async (req, res) => {
     return res.status(400).json({ message: 'Missing fields' });
   }
   try {
-    // Hash password before storing:contentReference[oaicite:14]{index=14}
     const hashed = await bcrypt.hash(password, 10);
     await pool.query(
       'INSERT INTO users (name, email, password, type, email_verified) VALUES ($1,$2,$3,$4,false)',
@@ -107,21 +108,20 @@ router.post('/register', async (req, res) => {
 router.post('/send-otp', async (req, res) => {
   const { email } = req.body;
   try {
-    // Find user
     const { rows } = await pool.query('SELECT * FROM users WHERE email=$1', [email]);
     if (!rows.length) return res.status(404).json({ message: 'No such user' });
+
     const user = rows[0];
     if (user.email_verified) return res.status(400).json({ message: 'Email already verified' });
 
-    // Generate OTP and expiration:contentReference[oaicite:15]{index=15}
-    const otp = generateOTP(); 
-    const expires = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes
-    // Store OTP in DB:contentReference[oaicite:16]{index=16}
+    const otp = generateOTP();
+    const expires = new Date(Date.now() + 15 * 60 * 1000); // 15 mins
+
     await pool.query(
       'UPDATE users SET otp=$1, otp_timestamp=$2 WHERE email=$3',
       [otp, expires, email]
     );
-    // Send OTP via email:contentReference[oaicite:17]{index=17}:contentReference[oaicite:18]{index=18}
+
     await sendOTPEmail(email, otp);
     return res.json({ message: 'OTP sent' });
   } catch (err) {
@@ -134,24 +134,23 @@ router.post('/send-otp', async (req, res) => {
 router.post('/verify-otp', async (req, res, next) => {
   const { email, otp } = req.body;
   try {
-    // Retrieve user and check OTP
     const { rows } = await pool.query('SELECT * FROM users WHERE email=$1', [email]);
     if (!rows.length) return res.status(404).json({ message: 'User not found' });
+
     const user = rows[0];
-    // Check OTP and expiration
     const now = new Date();
+
     if (!user.otp || !user.otp_timestamp || user.otp !== otp || now > user.otp_timestamp) {
       return res.status(400).json({ message: 'Invalid or expired OTP' });
     }
-    // Mark email as verified, clear OTP fields
+
     await pool.query(
       'UPDATE users SET email_verified=true, otp=NULL, otp_timestamp=NULL WHERE email=$1',
       [email]
     );
-    // Log the user in (create session):contentReference[oaicite:19]{index=19}:contentReference[oaicite:20]{index=20}
+
     req.login(user, (err) => {
-      if (err) { return next(err); }
-      // On successful login
+      if (err) return next(err);
       return res.json({ message: 'Email verified and logged in' });
     });
   } catch (err) {
@@ -167,6 +166,6 @@ router.post('/login', passport.authenticate('local', {
   failureFlash: true
 }));
 
-// At the end of Authentication.js
 export default router;
+
 
