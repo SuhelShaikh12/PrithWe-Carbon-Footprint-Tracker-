@@ -220,12 +220,11 @@
 // }
 
 
-
 // SentOTP.js
-const nodemailer = require('nodemailer');
+import nodemailer from 'nodemailer';
 
-// Generate a 6-digit numeric OTP (digits only):contentReference[oaicite:25]{index=25}
-function generateOTP() {
+// Generate a 6-digit numeric OTP
+export function generateOTP() {
   let otp = '';
   const chars = '0123456789';
   for (let i = 0; i < 6; i++) {
@@ -234,25 +233,24 @@ function generateOTP() {
   return otp;
 }
 
-// Send OTP to email using Nodemailer (with credentials from .env):contentReference[oaicite:26]{index=26}:contentReference[oaicite:27]{index=27}
-async function sendOTPEmail(email, otp) {
+// Send OTP to email using Nodemailer
+export async function sendOTPEmail(email, otp) {
   const transporter = nodemailer.createTransport({
-    host: process.env.MAIL_HOST,
-    port: process.env.MAIL_PORT,
+    host: process.env.MAIL_HOST || 'smtp.gmail.com',
+    port: process.env.MAIL_PORT || 465,
     secure: true,
     auth: {
-      user: process.env.MAIL_USER,
-      pass: process.env.MAIL_PASS,
+      user: process.env.EMAIL_USER,
+      pass: process.env.EMAIL_PASS,
     },
   });
 
   const message = {
-    from: process.env.MAIL_USER,
+    from: process.env.EMAIL_USER,
     to: email,
     subject: 'Your Verification Code',
     text: `Your OTP is: ${otp}`,
   };
+
   await transporter.sendMail(message);
 }
-
-module.exports = { generateOTP, sendOTPEmail };
