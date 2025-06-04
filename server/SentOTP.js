@@ -87,19 +87,82 @@
 // // });
 
 
+// // import nodemailer from "nodemailer";
+// // import dotenv from "dotenv";
+// // import fs from "fs";
+// // import path from "path";
+// // import { db } from "./db.js";
+
+// // dotenv.config();
+
+// // const transporter = nodemailer.createTransport({
+// //   service: "gmail",
+// //   auth: {
+// //     user: process.env.MAIL,
+// //     pass: process.env.APP_PASSWORD,
+// //   },
+// // });
+
+// // export function generateSixDigitOTP() {
+// //   return Math.floor(100000 + Math.random() * 900000).toString();
+// // }
+
+// // const getHtmlTemplate = (otp) => {
+// //   const templatePath = path.resolve("src/server/EmailTemplates/SendOtp.html");
+// //   const template = fs.readFileSync(templatePath, "utf8");
+// //   return template.replace("{{otp}}", otp);
+// // };
+
+
+// // export async function sendOTP(email) {
+// //   const normalizedEmail = email.trim().toLowerCase();
+
+// //   const result = await db.query(
+// //     "SELECT * FROM users WHERE LOWER(email) = $1 AND verified = false",
+// //     [normalizedEmail]
+// //   );
+
+// //   if (result.rows.length === 0) {
+// //     throw new Error("User not found or already verified");
+// //   }
+
+// //   const otp = generateSixDigitOTP();
+// //   const htmlContent = getHtmlTemplate(otp);
+
+// //   const mailOptions = {
+// //     from: process.env.MAIL,
+// //     to: normalizedEmail,
+// //     subject: "Your OTP for Prithwe",
+// //     text: `Your OTP for Prithwe is: ${otp}`,
+// //     html: htmlContent,
+// //   };
+
+// //   await transporter.sendMail(mailOptions);
+
+// //   const timestamp = Date.now();
+// //   await db.query(
+// //     "UPDATE users SET otp = $1, otp_timestamp = $2 WHERE LOWER(email) = $3",
+// //     [otp, timestamp, normalizedEmail]
+// //   );
+
+// //   return result.rows[0].id; // userId
+// // }
+
+
+
 // import nodemailer from "nodemailer";
 // import dotenv from "dotenv";
 // import fs from "fs";
 // import path from "path";
-// import { db } from "./db.js";
+// import db from "./db.js";
 
 // dotenv.config();
 
 // const transporter = nodemailer.createTransport({
 //   service: "gmail",
 //   auth: {
-//     user: process.env.MAIL,
-//     pass: process.env.APP_PASSWORD,
+//     user: process.env.EMAIL_USER,      // Use EMAIL_USER from .env
+//     pass: process.env.EMAIL_PASS,      // Use EMAIL_PASS from .env
 //   },
 // });
 
@@ -107,114 +170,89 @@
 //   return Math.floor(100000 + Math.random() * 900000).toString();
 // }
 
+// // Use __dirname equivalent in ES modules for robust template loading
 // const getHtmlTemplate = (otp) => {
-//   const templatePath = path.resolve("src/server/EmailTemplates/SendOtp.html");
+//   // Adjust path if needed based on where this file is located
+//   const templatePath = path.resolve(process.cwd(), "src/server/EmailTemplates/SendOtp.html");
 //   const template = fs.readFileSync(templatePath, "utf8");
 //   return template.replace("{{otp}}", otp);
 // };
 
-
 // export async function sendOTP(email) {
 //   const normalizedEmail = email.trim().toLowerCase();
 
+//   // Query users without filtering by verified status
 //   const result = await db.query(
-//     "SELECT * FROM users WHERE LOWER(email) = $1 AND verified = false",
+//     "SELECT * FROM users WHERE LOWER(email) = $1",
 //     [normalizedEmail]
 //   );
 
 //   if (result.rows.length === 0) {
-//     throw new Error("User not found or already verified");
+//     throw new Error("Email not registered");
+//   }
+
+//   if (result.rows[0].verified) {
+//     throw new Error("Email is already verified");
 //   }
 
 //   const otp = generateSixDigitOTP();
 //   const htmlContent = getHtmlTemplate(otp);
 
 //   const mailOptions = {
-//     from: process.env.MAIL,
+//     from: process.env.EMAIL_USER,  // Use EMAIL_USER here as sender
 //     to: normalizedEmail,
 //     subject: "Your OTP for Prithwe",
 //     text: `Your OTP for Prithwe is: ${otp}`,
 //     html: htmlContent,
 //   };
 
+//   // Send OTP email
 //   await transporter.sendMail(mailOptions);
 
 //   const timestamp = Date.now();
+//   // Save OTP and timestamp in DB for verification
 //   await db.query(
 //     "UPDATE users SET otp = $1, otp_timestamp = $2 WHERE LOWER(email) = $3",
 //     [otp, timestamp, normalizedEmail]
 //   );
 
-//   return result.rows[0].id; // userId
+//   return result.rows[0].id; // Return user id for later use
 // }
 
 
 
-import nodemailer from "nodemailer";
-import dotenv from "dotenv";
-import fs from "fs";
-import path from "path";
-import db from "./db.js";
+// SentOTP.js
+const nodemailer = require('nodemailer');
 
-dotenv.config();
-
-const transporter = nodemailer.createTransport({
-  service: "gmail",
-  auth: {
-    user: process.env.EMAIL_USER,      // Use EMAIL_USER from .env
-    pass: process.env.EMAIL_PASS,      // Use EMAIL_PASS from .env
-  },
-});
-
-export function generateSixDigitOTP() {
-  return Math.floor(100000 + Math.random() * 900000).toString();
+// Generate a 6-digit numeric OTP (digits only):contentReference[oaicite:25]{index=25}
+function generateOTP() {
+  let otp = '';
+  const chars = '0123456789';
+  for (let i = 0; i < 6; i++) {
+    otp += chars[Math.floor(Math.random() * chars.length)];
+  }
+  return otp;
 }
 
-// Use __dirname equivalent in ES modules for robust template loading
-const getHtmlTemplate = (otp) => {
-  // Adjust path if needed based on where this file is located
-  const templatePath = path.resolve(process.cwd(), "src/server/EmailTemplates/SendOtp.html");
-  const template = fs.readFileSync(templatePath, "utf8");
-  return template.replace("{{otp}}", otp);
-};
+// Send OTP to email using Nodemailer (with credentials from .env):contentReference[oaicite:26]{index=26}:contentReference[oaicite:27]{index=27}
+async function sendOTPEmail(email, otp) {
+  const transporter = nodemailer.createTransport({
+    host: process.env.MAIL_HOST,
+    port: process.env.MAIL_PORT,
+    secure: true,
+    auth: {
+      user: process.env.MAIL_USER,
+      pass: process.env.MAIL_PASS,
+    },
+  });
 
-export async function sendOTP(email) {
-  const normalizedEmail = email.trim().toLowerCase();
-
-  // Query users without filtering by verified status
-  const result = await db.query(
-    "SELECT * FROM users WHERE LOWER(email) = $1",
-    [normalizedEmail]
-  );
-
-  if (result.rows.length === 0) {
-    throw new Error("Email not registered");
-  }
-
-  if (result.rows[0].verified) {
-    throw new Error("Email is already verified");
-  }
-
-  const otp = generateSixDigitOTP();
-  const htmlContent = getHtmlTemplate(otp);
-
-  const mailOptions = {
-    from: process.env.EMAIL_USER,  // Use EMAIL_USER here as sender
-    to: normalizedEmail,
-    subject: "Your OTP for Prithwe",
-    text: `Your OTP for Prithwe is: ${otp}`,
-    html: htmlContent,
+  const message = {
+    from: process.env.MAIL_USER,
+    to: email,
+    subject: 'Your Verification Code',
+    text: `Your OTP is: ${otp}`,
   };
-
-  // Send OTP email
-  await transporter.sendMail(mailOptions);
-
-  const timestamp = Date.now();
-  // Save OTP and timestamp in DB for verification
-  await db.query(
-    "UPDATE users SET otp = $1, otp_timestamp = $2 WHERE LOWER(email) = $3",
-    [otp, timestamp, normalizedEmail]
-  );
-
-  return result.rows[0].id; // Return user id for later use
+  await transporter.sendMail(message);
 }
+
+module.exports = { generateOTP, sendOTPEmail };
