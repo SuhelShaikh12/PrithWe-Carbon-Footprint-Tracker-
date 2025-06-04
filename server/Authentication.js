@@ -128,28 +128,40 @@ router.post('/register', async (req, res) => {
 // POST /api/auth/send-otp
 router.post('/send-otp', async (req, res) => {
   const { email } = req.body;
+  if (!email) return res.status(400).json({ message: "Email is required." });
+
   try {
-    const { rows } = await pool.query('SELECT * FROM users WHERE LOWER(email) = LOWER($1)', [email]);
+    const lowerEmail = email.toLowerCase();
+
+    const { rows } = await pool.query(
+      'SELECT * FROM users WHERE LOWER(email) = $1',
+      [lowerEmail]
+    );
+
     if (!rows.length) return res.status(404).json({ message: 'No such user' });
 
     const user = rows[0];
-    if (user.email_verified) return res.status(400).json({ message: 'Email already verified' });
+
+    if (user.email_verified) {
+      return res.status(400).json({ message: 'Email already verified' });
+    }
 
     const otp = generateOTP();
-    const expires = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes
+    const expires = new Date(Date.now() + 15 * 60 * 1000);
 
     await pool.query(
       'UPDATE users SET otp=$1, otp_timestamp=$2 WHERE email=$3',
-      [otp, expires, user.email] // use DB case-sensitive email
+      [otp, expires, user.email] // use original case email from DB
     );
 
     await sendOTPEmail(user.email, otp);
     return res.json({ message: 'OTP sent' });
   } catch (err) {
-    console.error(err);
+    console.error("Send OTP error:", err);
     return res.status(500).json({ message: 'Error sending OTP' });
   }
 });
+
 
 // POST /api/auth/verify-otp
 router.post('/verify-otp', async (req, res, next) => {
