@@ -99,23 +99,77 @@
 
 
 
-// App.jsx (React Router setup)
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+// // App.jsx (React Router setup)
+// import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+// import RegisterForm from './RegisterForm';
+// import VerifyEmail from './VerifyEmail';
+// import Dashboard from './Dashboard';
+// import LoginForm from './LoginForm';
+
+// function App() {
+//   return (
+//     <Router>
+//       <Routes>
+//         <Route path="/register" element={<RegisterForm />} />
+//         <Route path="/verify-email" element={<VerifyEmail />} />
+//         <Route path="/login" element={<LoginForm />} />
+//         <Route path="/dashboard" element={<Dashboard />} />
+//         {/* ... other routes ... */}
+//       </Routes>
+//     </Router>
+//   );
+// }
+
+// export default App;
+
+
+
+// src/App.jsx
+import { useEffect } from 'react';
+import { BrowserRouter as Router, Routes, Route, useNavigate } from 'react-router-dom';
+import axios from 'axios';
+
 import RegisterForm from './RegisterForm';
 import VerifyEmail from './VerifyEmail';
 import Dashboard from './Dashboard';
 import LoginForm from './LoginForm';
 
+function AppContent() {
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    async function checkLoginStatus() {
+      try {
+        const res = await axios.get("/api/auth/login/status", {
+          withCredentials: true, // ✅ required to send session cookie
+        });
+        console.log("✅ Logged in:", res.data);
+        // Optional: Set global state or user info
+      } catch (err) {
+        console.warn("❌ Not logged in:", err.response?.status || err.message);
+        // Optional: Navigate to login if on protected page
+        // navigate("/login");
+      }
+    }
+
+    checkLoginStatus();
+  }, []);
+
+  return (
+    <Routes>
+      <Route path="/register" element={<RegisterForm />} />
+      <Route path="/verify-email" element={<VerifyEmail />} />
+      <Route path="/login" element={<LoginForm />} />
+      <Route path="/dashboard" element={<Dashboard />} />
+      {/* Add more routes if needed */}
+    </Routes>
+  );
+}
+
 function App() {
   return (
     <Router>
-      <Routes>
-        <Route path="/register" element={<RegisterForm />} />
-        <Route path="/verify-email" element={<VerifyEmail />} />
-        <Route path="/login" element={<LoginForm />} />
-        <Route path="/dashboard" element={<Dashboard />} />
-        {/* ... other routes ... */}
-      </Routes>
+      <AppContent />
     </Router>
   );
 }

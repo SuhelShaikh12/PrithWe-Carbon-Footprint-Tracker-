@@ -114,84 +114,193 @@
 // export default VerifyEmail;
 
 
-import { useState } from 'react';
+// import { useState } from 'react';
+// import { useNavigate } from 'react-router-dom';
+
+// function VerifyEmail() {
+//   const [email, setEmail] = useState('');
+//   const [otp, setOtp] = useState('');
+//   const [otpSent, setOtpSent] = useState(false);
+//   const navigate = useNavigate();
+
+//   // Send OTP to backend
+//   async function sendOtp() {
+//     console.log("Email entered:", email);
+
+//     if (!email.trim()) {
+//       alert('⚠️ Please enter your registered email.');
+//       return;
+//     }
+
+//     try {
+//       const res = await fetch('/api/auth/send-otp', { // Fixed URL here
+//         method: 'POST',
+//         headers: { 'Content-Type': 'application/json' },
+//         body: JSON.stringify({ email }),
+//         credentials: 'include',  // Send cookies if any
+//       });
+
+//       if (res.ok) {
+//         setOtpSent(true);
+//         alert("✅ OTP sent to your email.");
+//       } else {
+//         const data = await res.json();
+//         alert(data.message || '❌ Failed to send OTP.');
+//       }
+//     } catch (error) {
+//       console.error("Send OTP error:", error);
+//       alert('❌ Network error while sending OTP.');
+//     }
+//   }
+
+//   // Verify OTP
+//   async function verifyOtp() {
+//     if (!otp.trim()) {
+//       alert("⚠️ Please enter the OTP.");
+//       return;
+//     }
+
+//     try {
+//       const res = await fetch('/api/auth/verify-otp', { // Fixed URL here
+//         method: 'POST',
+//         headers: { 'Content-Type': 'application/json' },
+//         body: JSON.stringify({ email, otp }),
+//         credentials: 'include', // Send cookies
+//       });
+
+//       if (res.ok) {
+//         alert("✅ Email verified successfully.");
+//         navigate('/dashboard');
+//       } else {
+//         const data = await res.json();
+//         alert(data.message || '❌ OTP is incorrect or expired.');
+//       }
+//     } catch (error) {
+//       console.error("Verify OTP error:", error);
+//       alert("❌ Network error while verifying OTP.");
+//     }
+//   }
+
+//   return (
+//     <div>
+//       <h2>Verify Email</h2>
+//       <input
+//         type="email"
+//         value={email}
+//         onChange={e => setEmail(e.target.value)}
+//         placeholder="Registered Email"
+//         disabled={otpSent}
+//       />
+//       {!otpSent && <button onClick={sendOtp}>Send OTP</button>}
+//       {otpSent && (
+//         <>
+//           <input
+//             type="text"
+//             value={otp}
+//             onChange={e => setOtp(e.target.value)}
+//             placeholder="Enter OTP"
+//           />
+//           <button onClick={verifyOtp}>Verify OTP</button>
+//         </>
+//       )}
+//     </div>
+//   );
+// }
+
+// export default VerifyEmail;
+
+
+
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 
-function VerifyEmail() {
+function OtpVerification() {
   const [email, setEmail] = useState('');
   const [otp, setOtp] = useState('');
   const [otpSent, setOtpSent] = useState(false);
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
-  // Send OTP to backend
-  async function sendOtp() {
-    console.log("Email entered:", email);
-
-    if (!email.trim()) {
-      alert('⚠️ Please enter your registered email.');
-      return;
+  useEffect(() => {
+    const storedEmail = localStorage.getItem('pendingEmail');
+    if (storedEmail) {
+      setEmail(storedEmail);
+    } else {
+      alert("⚠️ No email found. Please register first.");
+      navigate('/register');
     }
+  }, [navigate]);
 
+  async function sendOtp() {
+    setLoading(true);
     try {
-      const res = await fetch('/api/auth/send-otp', { // Fixed URL here
+      const res = await fetch('/api/auth/send-otp', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email }),
-        credentials: 'include',  // Send cookies if any
+        credentials: 'include',
       });
 
+      const data = await res.json();
       if (res.ok) {
         setOtpSent(true);
-        alert("✅ OTP sent to your email.");
+        alert('✅ OTP sent to your email.');
       } else {
-        const data = await res.json();
         alert(data.message || '❌ Failed to send OTP.');
       }
     } catch (error) {
-      console.error("Send OTP error:", error);
+      console.error('Send OTP error:', error);
       alert('❌ Network error while sending OTP.');
+    } finally {
+      setLoading(false);
     }
   }
 
-  // Verify OTP
   async function verifyOtp() {
     if (!otp.trim()) {
-      alert("⚠️ Please enter the OTP.");
+      alert('⚠️ Please enter the OTP.');
       return;
     }
 
+    setLoading(true);
     try {
-      const res = await fetch('/api/auth/verify-otp', { // Fixed URL here
+      const res = await fetch('/api/auth/verify-otp', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, otp }),
-        credentials: 'include', // Send cookies
+        credentials: 'include',
       });
 
+      const data = await res.json();
       if (res.ok) {
-        alert("✅ Email verified successfully.");
+        localStorage.removeItem('pendingEmail');
+        alert('✅ Email verified! You are now logged in.');
         navigate('/dashboard');
       } else {
-        const data = await res.json();
-        alert(data.message || '❌ OTP is incorrect or expired.');
+        alert(data.message || '❌ Invalid or expired OTP.');
       }
     } catch (error) {
-      console.error("Verify OTP error:", error);
-      alert("❌ Network error while verifying OTP.");
+      console.error('Verify OTP error:', error);
+      alert('❌ Network error while verifying OTP.');
+    } finally {
+      setLoading(false);
     }
   }
 
   return (
     <div>
-      <h2>Verify Email</h2>
+      <h2>Verify Your Email</h2>
       <input
         type="email"
         value={email}
-        onChange={e => setEmail(e.target.value)}
+        disabled
         placeholder="Registered Email"
-        disabled={otpSent}
       />
-      {!otpSent && <button onClick={sendOtp}>Send OTP</button>}
+      {!otpSent && (
+        <button onClick={sendOtp} disabled={loading}>
+          {loading ? 'Sending OTP...' : 'Send OTP'}
+        </button>
+      )}
       {otpSent && (
         <>
           <input
@@ -200,11 +309,13 @@ function VerifyEmail() {
             onChange={e => setOtp(e.target.value)}
             placeholder="Enter OTP"
           />
-          <button onClick={verifyOtp}>Verify OTP</button>
+          <button onClick={verifyOtp} disabled={loading}>
+            {loading ? 'Verifying...' : 'Verify OTP'}
+          </button>
         </>
       )}
     </div>
   );
 }
 
-export default VerifyEmail;
+export default OtpVerification;

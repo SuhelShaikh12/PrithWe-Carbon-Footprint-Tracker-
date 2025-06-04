@@ -1,90 +1,77 @@
 
 
-// import passport from "passport";
-// import { Strategy as LocalStrategy } from "passport-local";
-// import bcrypt from "bcrypt";
-// import { db } from "./index.js";
 
-// // Local Strategy for Login
-// passport.use(
-//   new LocalStrategy(
-//     {
-//       usernameField: "email",
-//       passwordField: "password",
-//       passReqToCallback: true, // Allows access to req.body.type
-//     },
-//     async (req, email, password, done) => {
-//       try {
-//         const type = req.body.type;
-//         if (!type) {
-//           return done(null, false, { message: "User type is required." });
-//         }
+// // passport.js
+// // passport.js (ESM version)
+// // passport.js
+// import passport from 'passport';
+// import { Strategy as LocalStrategy } from 'passport-local';
+// import bcrypt from 'bcrypt';
+// import { pool } from './db.js'; // named import
 
-//         const normalizedEmail = email.trim().toLowerCase();
-
-//         const result = await db.query(
-//           "SELECT * FROM users WHERE LOWER(email) = $1 AND type = $2",
-//           [normalizedEmail, type]
-//         );
-
-//         if (result.rows.length === 0) {
-//           return done(null, false, { message: "Incorrect email or user type." });
-//         }
-
-//         const user = result.rows[0];
-//         const isPasswordMatch = await bcrypt.compare(password, user.password);
-
-//         if (!isPasswordMatch) {
-//           return done(null, false, { message: "Incorrect password." });
-//         }
-
-//         return done(null, user);
-//       } catch (err) {
-//         return done(err);
+// passport.use(new LocalStrategy(
+//   { usernameField: 'email' },
+//   async (email, password, done) => {
+//     try {
+//       const { rows } = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
+//       if (!rows.length) {
+//         return done(null, false, { message: 'Incorrect email.' });
 //       }
-//     }
-//   )
-// );
 
-// // Serialize user to session
+//       const user = rows[0];
+//       const match = await bcrypt.compare(password, user.password);
+//       if (!match) {
+//         return done(null, false, { message: 'Incorrect password.' });
+//       }
+
+//       return done(null, user);
+//     } catch (err) {
+//       return done(err);
+//     }
+//   }
+// ));
+
 // passport.serializeUser((user, done) => {
 //   done(null, user.id);
 // });
 
-// // Deserialize user from session
 // passport.deserializeUser(async (id, done) => {
 //   try {
-//     const result = await db.query("SELECT * FROM users WHERE id = $1", [id]);
-//     if (result.rows.length === 0) {
-//       return done(null, false);
+//     const { rows } = await pool.query('SELECT * FROM users WHERE id = $1', [id]);
+//     if (!rows.length) {
+//       return done(new Error('User not found'));
 //     }
-//     done(null, result.rows[0]);
+//     done(null, rows[0]);
 //   } catch (err) {
 //     done(err);
 //   }
 // });
 
+// export default passport;
 
 
 
-// passport.js
-// passport.js (ESM version)
-// passport.js
 import passport from 'passport';
 import { Strategy as LocalStrategy } from 'passport-local';
 import bcrypt from 'bcrypt';
-import { pool } from './db.js'; // named import
+import { pool } from './db.js';
 
 passport.use(new LocalStrategy(
   { usernameField: 'email' },
   async (email, password, done) => {
     try {
-      const { rows } = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
+      const { rows } = await pool.query('SELECT * FROM users WHERE email = $1', [email.toLowerCase()]);
       if (!rows.length) {
         return done(null, false, { message: 'Incorrect email.' });
       }
 
       const user = rows[0];
+
+      // Optional: check if user email is verified here (could also be done in login route)
+      // if (!user.email_verified) {
+      //   return done(null, false, { message: 'Email not verified.' });
+      // }
+
       const match = await bcrypt.compare(password, user.password);
       if (!match) {
         return done(null, false, { message: 'Incorrect password.' });
