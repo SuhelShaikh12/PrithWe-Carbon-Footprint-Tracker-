@@ -110,7 +110,8 @@ router.post('/register', async (req, res) => {
 router.post('/send-otp', async (req, res) => {
   const { email } = req.body;
   try {
-    const { rows } = await pool.query('SELECT * FROM users WHERE email=$1', [email]);
+    // Make email case-insensitive
+    const { rows } = await pool.query('SELECT * FROM users WHERE LOWER(email) = LOWER($1)', [email]);
     if (!rows.length) return res.status(404).json({ message: 'No such user' });
 
     const user = rows[0];
@@ -121,16 +122,17 @@ router.post('/send-otp', async (req, res) => {
 
     await pool.query(
       'UPDATE users SET otp=$1, otp_timestamp=$2 WHERE email=$3',
-      [otp, expires, email]
+      [otp, expires, user.email] // use exact case email from DB
     );
 
-    await sendOTPEmail(email, otp);
+    await sendOTPEmail(user.email, otp);
     return res.json({ message: 'OTP sent' });
   } catch (err) {
     console.error(err);
     return res.status(500).json({ message: 'Error sending OTP' });
   }
 });
+
 
 // POST /auth/verify-otp
 router.post('/verify-otp', async (req, res, next) => {
