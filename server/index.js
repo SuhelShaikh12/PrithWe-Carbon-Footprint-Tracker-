@@ -1,142 +1,6 @@
 
 
 
-// import express from "express";
-// import path from "path";
-// import dotenv from "dotenv";
-// import cors from "cors";
-// import cookieParser from "cookie-parser";
-// import session from "express-session";
-// import passport from "passport";
-// import memorystore from "memorystore";
-// import pg from "pg";
-// import axios from "axios";
-// import { fileURLToPath } from "url";
-
-// // Import routers
-// import householdRouter from "./householdData.js";
-// import contactUsRouter from "./contactUs.js";
-// import authRoutes from "./Authentication.js"; // auth routes with register/send-otp/verify-otp
-// import businessRouter from "./businessData.js";
-// import adminRouter from "./adminData.js";
-
-// // Import passport config
-// import "./passport.js";
-
-// dotenv.config();
-
-// const app = express();
-// const MemoryStore = memorystore(session);
-// const port = process.env.PORT || 3001;
-
-// // Environment detection
-// const isProduction = process.env.NODE_ENV === "production";
-
-// const __filename = fileURLToPath(import.meta.url);
-// const __dirname = path.dirname(__filename);
-
-// // ===== PostgreSQL DB Connection =====
-// const db = new pg.Client({
-//   connectionString: process.env.PG_CONNECTION_STRING,
-//   ...(isProduction && { ssl: { rejectUnauthorized: false } }),
-// });
-
-// db
-//   .connect()
-//   .then(() => console.log("✅ Connected to PostgreSQL database"))
-//   .catch((err) => console.error("❌ Database connection error:", err));
-
-// // ===== Middleware =====
-// app.use(
-//   cors({
-//     origin: isProduction
-//       ? "https://prithwe-carbon-footprint-tracker.onrender.com"
-//       : "http://localhost:5173",
-//     credentials: true,
-//   })
-// );
-
-// app.use(cookieParser());
-// app.use(express.json());
-// app.use(express.urlencoded({ extended: true }));
-
-// app.use(
-//   session({
-//     secret: process.env.SESSION_SECRET || "default_secret",
-//     resave: false,
-//     saveUninitialized: false,
-//     store: new MemoryStore({
-//       checkPeriod: 86400000, // prune expired sessions every 24h
-//     }),
-//     cookie: {
-//       secure: isProduction,
-//       httpOnly: true,
-//       sameSite: isProduction ? "none" : "lax",
-//       maxAge: 86400000,
-//     },
-//   })
-// );
-
-// app.use(passport.initialize());
-// app.use(passport.session());
-
-// // ===== Routes =====
-// app.use("/api/household", householdRouter);
-// app.use("/api/contact", contactUsRouter);
-// app.use("/api/auth", authRoutes);
-// app.use("/api/business", businessRouter);
-// app.use("/api/admin", adminRouter);
-
-// // ===== Auth status & user type =====
-// app.get("/api/auth/login/status", (req, res) => {
-//   if (req.user) {
-//     req.session.userId = req.user.id;
-//     return res.status(200).json(req.user);
-//   }
-//   return res.sendStatus(401);
-// });
-
-// app.get("/api/auth/user-type", (req, res) => {
-//   if (req.user) {
-//     req.session.userType = req.user.type;
-//     return res.status(200).json({ type: req.user.type });
-//   }
-//   return res.sendStatus(401);
-// });
-
-// // ===== Serve frontend in production =====
-// if (isProduction) {
-//   const clientDist = path.join(__dirname, "../client/dist");
-//   app.use(express.static(clientDist));
-//   app.get("*", (_, res) => res.sendFile(path.join(clientDist, "index.html")));
-// } else {
-//   app.get("/", (_, res) => res.send("App is under development."));
-// }
-
-// // ===== Keep Render alive =====
-// const pingURL = isProduction
-//   ? "https://prithwe-carbon-footprint-tracker.onrender.com/"
-//   : `http://localhost:${port}/`;
-
-// setInterval(() => {
-//   axios
-//     .get(pingURL)
-//     .then((res) =>
-//       console.log(`🌐 Pinged at ${new Date().toISOString()} — Status: ${res.status}`)
-//     )
-//     .catch((err) => console.error("⚠️ Ping error:", err.message));
-// }, 800000);
-
-// // ===== Start server =====
-// app.listen(port, () => {
-//   console.log(`🚀 Server listening on port ${port}`);
-// });
-
-// // Export db for use in other modules (like Authentication.js)
-// export { db };
-
-
-
 
 // import express from "express";
 // import path from "path";
@@ -150,14 +14,14 @@
 // import axios from "axios";
 // import { fileURLToPath } from "url";
 
-// // Import routers
+// // Routers
 // import householdRouter from "./householdData.js";
 // import contactUsRouter from "./contactUs.js";
-// import authRoutes from "./Authentication.js"; // No more OTP routes inside
+// import authRoutes from "./Authentication.js"; // Only registration + login
 // import businessRouter from "./businessData.js";
 // import adminRouter from "./adminData.js";
 
-// // Passport config (kept if you still use it)
+// // Passport strategy
 // import "./passport.js";
 
 // dotenv.config();
@@ -170,17 +34,17 @@
 // const __filename = fileURLToPath(import.meta.url);
 // const __dirname = path.dirname(__filename);
 
-// // ===== PostgreSQL DB Connection =====
+// // === PostgreSQL Setup ===
 // const db = new pg.Client({
 //   connectionString: process.env.PG_CONNECTION_STRING,
 //   ...(isProduction && { ssl: { rejectUnauthorized: false } }),
 // });
 
 // db.connect()
-//   .then(() => console.log("✅ Connected to PostgreSQL database"))
-//   .catch((err) => console.error("❌ Database connection error:", err));
+//   .then(() => console.log("✅ Connected to PostgreSQL"))
+//   .catch((err) => console.error("❌ DB connection error:", err));
 
-// // ===== Middleware =====
+// // === Middleware ===
 // app.use(
 //   cors({
 //     origin: isProduction
@@ -199,12 +63,12 @@
 //     secret: process.env.SESSION_SECRET || "default_secret",
 //     resave: false,
 //     saveUninitialized: false,
-//     store: new MemoryStore({ checkPeriod: 86400000 }),
+//     store: new MemoryStore({ checkPeriod: 86400000 }), // 1 day
 //     cookie: {
 //       secure: isProduction,
 //       httpOnly: true,
 //       sameSite: isProduction ? "none" : "lax",
-//       maxAge: 86400000,
+//       maxAge: 86400000, // 1 day
 //     },
 //   })
 // );
@@ -212,38 +76,38 @@
 // app.use(passport.initialize());
 // app.use(passport.session());
 
-// // ===== API Routes =====
+// // === API Routes ===
 // app.use("/api/household", householdRouter);
 // app.use("/api/contact", contactUsRouter);
-// app.use("/api/auth", authRoutes); // Simplified auth: register + login only
+// app.use("/api/auth", authRoutes); // Handles register/login only
 // app.use("/api/business", businessRouter);
 // app.use("/api/admin", adminRouter);
 
-// // ===== Auth Session Status Routes =====
+// // === Auth Session Check ===
 // app.get("/api/auth/login/status", (req, res) => {
-//   if (req.user) {
+//   if (req.isAuthenticated()) {
 //     return res.status(200).json(req.user);
 //   }
 //   return res.sendStatus(401);
 // });
 
 // app.get("/api/auth/user-type", (req, res) => {
-//   if (req.user) {
+//   if (req.isAuthenticated()) {
 //     return res.status(200).json({ type: req.user.type });
 //   }
 //   return res.sendStatus(401);
 // });
 
-// // ===== Serve frontend in production =====
+// // === Frontend Serving (Production) ===
 // if (isProduction) {
 //   const clientDist = path.join(__dirname, "../client/dist");
 //   app.use(express.static(clientDist));
 //   app.get("*", (_, res) => res.sendFile(path.join(clientDist, "index.html")));
 // } else {
-//   app.get("/", (_, res) => res.send("App is under development."));
+//   app.get("/", (_, res) => res.send("App is in development mode."));
 // }
 
-// // ===== Keep Render.com Free Tier Alive =====
+// // === Keep Alive Ping (Render.com) ===
 // const pingURL = isProduction
 //   ? "https://prithwe-carbon-footprint-tracker.onrender.com/"
 //   : `http://localhost:${port}/`;
@@ -255,17 +119,14 @@
 //       console.log(`🌐 Pinged at ${new Date().toISOString()} — Status: ${res.status}`)
 //     )
 //     .catch((err) => console.error("⚠️ Ping error:", err.message));
-// }, 800000); // ~13 minutes
+// }, 800000); // 13.3 minutes
 
-// // ===== Start server =====
+// // === Start Server ===
 // app.listen(port, () => {
-//   console.log(`🚀 Server listening on port ${port}`);
+//   console.log(`🚀 Server running on port ${port}`);
 // });
 
-// // Export db for reuse in other modules
 // export { db };
-
-
 
 
 
@@ -284,7 +145,7 @@ import { fileURLToPath } from "url";
 // Routers
 import householdRouter from "./householdData.js";
 import contactUsRouter from "./contactUs.js";
-import authRoutes from "./Authentication.js"; // Only registration + login
+import authRoutes from "./Authentication.js"; // your auth routes
 import businessRouter from "./businessData.js";
 import adminRouter from "./adminData.js";
 
@@ -317,7 +178,7 @@ app.use(
     origin: isProduction
       ? "https://prithwe-carbon-footprint-tracker.onrender.com"
       : "http://localhost:5173",
-    credentials: true,
+    credentials: true, // important for cookies
   })
 );
 
@@ -346,7 +207,7 @@ app.use(passport.session());
 // === API Routes ===
 app.use("/api/household", householdRouter);
 app.use("/api/contact", contactUsRouter);
-app.use("/api/auth", authRoutes); // Handles register/login only
+app.use("/api/auth", authRoutes); // <-- auth routes prefix '/api/auth'
 app.use("/api/business", businessRouter);
 app.use("/api/admin", adminRouter);
 
@@ -386,7 +247,7 @@ setInterval(() => {
       console.log(`🌐 Pinged at ${new Date().toISOString()} — Status: ${res.status}`)
     )
     .catch((err) => console.error("⚠️ Ping error:", err.message));
-}, 800000); // 13.3 minutes
+}, 800000); // every 13.3 minutes
 
 // === Start Server ===
 app.listen(port, () => {

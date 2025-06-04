@@ -114,8 +114,6 @@
 // export default VerifyEmail;
 
 
-
-
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
@@ -127,7 +125,7 @@ function VerifyEmail() {
 
   // Send OTP to backend
   async function sendOtp() {
-    console.log("Email entered:", email); // ✅ This logs what you're sending
+    console.log("Email entered:", email);
 
     if (!email.trim()) {
       alert('⚠️ Please enter your registered email.');
@@ -135,10 +133,11 @@ function VerifyEmail() {
     }
 
     try {
-      const res = await fetch('/auth/send-otp', {
+      const res = await fetch('/api/auth/send-otp', { // Fixed URL here
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email }),
+        credentials: 'include',  // Send cookies if any
       });
 
       if (res.ok) {
@@ -162,17 +161,19 @@ function VerifyEmail() {
     }
 
     try {
-      const res = await fetch('/auth/verify-otp', {
+      const res = await fetch('/api/auth/verify-otp', { // Fixed URL here
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, otp }),
+        credentials: 'include', // Send cookies
       });
 
       if (res.ok) {
         alert("✅ Email verified successfully.");
         navigate('/dashboard');
       } else {
-        alert('❌ OTP is incorrect or expired.');
+        const data = await res.json();
+        alert(data.message || '❌ OTP is incorrect or expired.');
       }
     } catch (error) {
       console.error("Verify OTP error:", error);
