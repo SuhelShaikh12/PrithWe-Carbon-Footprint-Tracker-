@@ -163,7 +163,7 @@ import { fileURLToPath } from "url";
 import authRoutes from "./Authentication.js";
 import { pool } from "./db.js";
 import PgSession from "connect-pg-simple";
-import dotenv from 'dotenv';
+
 dotenv.config();
 
 console.log('[DEBUG] Current DB Host:', process.env.PG_HOST);
