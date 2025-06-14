@@ -79,13 +79,10 @@
 // export default pool;
 
 
-
-// backend/db.js
-// db.js
 // db.js
 import dotenv from "dotenv";
-import pkg from "pg";
-const { Pool } = pkg;
+import pg from "pg";
+const { Pool } = pg;
 
 // Load environment variables
 dotenv.config();
@@ -94,22 +91,22 @@ dotenv.config();
 const pool = new Pool({
   connectionString: process.env.PG_CONNECTION_STRING,
   ssl: { 
-    rejectUnauthorized: false // Required for Render PostgreSQL
+    rejectUnauthorized: false
   }
 });
 
-// Test connection on startup
+// Test connection
 (async () => {
   try {
     await pool.query("SELECT NOW()");
-    console.log("✅ Connected to PostgreSQL database");
+    console.log("✅ Connected to PostgreSQL");
   } catch (err) {
     console.error("❌ Database connection failed:", err.message);
-    process.exit(1); // Exit if DB connection fails
   }
 })();
 
-// Export for use in other files
-export const query = (text, params) => pool.query(text, params);
+// Named export
+export { pool };
 
+// Default export
 export default pool;
