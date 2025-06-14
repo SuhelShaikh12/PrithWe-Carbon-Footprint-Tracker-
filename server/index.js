@@ -163,9 +163,13 @@ import { fileURLToPath } from "url";
 import authRoutes from "./Authentication.js";
 import { pool } from "./db.js";
 import PgSession from "connect-pg-simple";
-
-// Setup
+import dotenv from 'dotenv';
 dotenv.config();
+
+console.log('[DEBUG] Current DB Host:', process.env.PG_HOST);
+console.log('[DEBUG] Full Connection String:', process.env.PG_CONNECTION_STRING);
+// Setup
+
 const app = express();
 const isProduction = process.env.NODE_ENV === "production";
 const port = process.env.PORT || 3001;
