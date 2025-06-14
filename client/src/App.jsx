@@ -5,7 +5,7 @@ import Layout from './Layout';
 import Home from './pages/Home';
 import ContactUs from './pages/ContactUs';
 import LoginForm from './components/LoginForm';
-import RegisterForm from './components/RegisterForm'
+import RegisterForm from './components/RegisterForm';
 import Calculator from './pages/Calculator';
 import AboutUs from './pages/AboutUs';
 import Information from './pages/Information';
