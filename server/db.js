@@ -84,7 +84,7 @@ import dotenv from "dotenv";
 import pg from "pg";
 const { Pool } = pg;
 
-// Load environment variables
+
 dotenv.config();
 
 // Database connection configuration
